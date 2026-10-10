@@ -1,0 +1,1258 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07070b">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex">
+<title>Rio Pass</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2307070b'/%3E%3Ctext x='32' y='45' font-family='Arial,sans-serif' font-weight='900' font-size='36' text-anchor='middle' fill='%23c77dff'%3ER%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #07070b;
+    --surface: #12121a;
+    --surface-2: #1b1b26;
+    --line: #2a2a3a;
+    --line-strong: #3d3d53;
+    --text: #f5f5fa;
+    --text-2: #d8d8e4;
+    --muted: #a6a6bc;
+    --accent: #c77dff;
+    --accent-2: #ff5cc8;
+    --accent-ink: #14001f;
+    --accent-glow: rgba(199, 125, 255, .55);
+    --ok: #1fe06d;
+    --ok-ink: #00210d;
+    --ok-soft: rgba(31, 224, 109, .14);
+    --ok-text: #62f49f;
+    --bad: #e3122c;
+    --bad-ink: #ffffff;
+    --bad-soft: rgba(255, 72, 92, .15);
+    --bad-text: #ff7f8d;
+    --warn: #ffc94a;
+    --warn-soft: rgba(255, 201, 74, .12);
+    --warn-text: #ffe2a0;
+    --radius: 18px;
+    --mono: ui-monospace, "Roboto Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg) radial-gradient(120% 420px at 50% -120px, rgba(199, 125, 255, .18), transparent 70%) no-repeat;
+    color: var(--text);
+    font: 17px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  h1, h2, p { margin: 0; }
+  .mono { font-family: var(--mono); letter-spacing: .03em; }
+
+  /* ---------- Barra superior ---------- */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: calc(10px + env(safe-area-inset-top)) 16px 12px;
+    background: rgba(7, 7, 11, .88);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-inner { max-width: 640px; margin: 0 auto; display: grid; gap: 10px; }
+  .topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .brand { display: flex; align-items: baseline; gap: 8px; font-size: 1.65rem; font-weight: 900; line-height: 1; }
+  .brand-rio {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: .02em;
+  }
+  .brand-pass { font-size: .88em; font-weight: 700; letter-spacing: .3em; }
+  .demo-tag {
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .14em;
+    color: var(--muted);
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    padding: 4px 10px;
+  }
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 5px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+  }
+  .tab {
+    appearance: none;
+    border: 0;
+    border-radius: 12px;
+    min-height: 48px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 1.05rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .tab[aria-selected="true"] { background: var(--text); color: var(--bg); }
+
+  /* ---------- Layout ---------- */
+  main { flex: 1; display: flex; flex-direction: column; width: 100%; max-width: 640px; margin: 0 auto; }
+  .view { flex: 1; padding: 16px 16px calc(28px + env(safe-area-inset-bottom)); }
+  .banner {
+    margin: 14px 16px 0;
+    padding: 12px 14px;
+    border-radius: 14px;
+    font-size: .98rem;
+    line-height: 1.4;
+    background: var(--warn-soft);
+    border: 1px solid rgba(255, 201, 74, .45);
+    color: var(--warn-text);
+  }
+  .banner strong { color: var(--warn); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+
+  /* ---------- Botones e inputs ---------- */
+  .btn {
+    appearance: none;
+    border: 2px solid transparent;
+    border-radius: 16px;
+    min-height: 54px;
+    padding: 0 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font: inherit;
+    font-size: 1.05rem;
+    font-weight: 800;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform .08s ease, background-color .15s ease, border-color .15s ease;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn svg { width: 1.4em; height: 1.4em; flex: none; }
+  .btn-block { width: 100%; }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-secondary { background: var(--surface-2); color: var(--text); border-color: var(--line-strong); }
+  .btn-ghost { background: transparent; color: var(--text); border-color: var(--line-strong); }
+  .btn-danger { background: transparent; color: var(--bad-text); border-color: rgba(255, 90, 108, .45); }
+  .btn-small { min-height: 42px; padding: 0 14px; font-size: .92rem; border-radius: 12px; }
+  .btn-xl {
+    width: 100%;
+    min-height: 80px;
+    border-radius: 22px;
+    font-size: 1.3rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    color: var(--accent-ink);
+    box-shadow: 0 12px 40px -14px var(--accent-glow);
+  }
+  .btn-xl.is-stop { background: var(--surface-2); color: var(--text); border-color: var(--line-strong); box-shadow: none; }
+
+  label, .label { display: block; margin-bottom: 8px; font-weight: 800; }
+  .input {
+    width: 100%;
+    min-height: 56px;
+    padding: 0 16px;
+    border: 2px solid var(--line-strong);
+    border-radius: 14px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    font-size: 1.1rem;
+  }
+  .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(199, 125, 255, .22); }
+  .input::placeholder { color: #6f6f88; }
+  input.mono { text-transform: uppercase; }
+  .hint { margin-top: 8px; color: var(--muted); font-size: .93rem; }
+  .form-error { color: var(--bad-text); font-weight: 700; }
+  .form-error:empty { display: none; }
+
+  /* ---------- Modo Puerta ---------- */
+  .door { display: flex; flex-direction: column; gap: 16px; }
+  .door-top { display: flex; justify-content: flex-end; }
+  .sound-toggle {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text-2);
+    font: inherit;
+    font-size: .9rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .sound-toggle svg { width: 18px; height: 18px; }
+  .sound-toggle[aria-pressed="false"] { color: var(--muted); }
+  .sound-toggle[aria-pressed="false"] .wave { display: none; }
+
+  .scanner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 320px;
+    text-align: center;
+  }
+  .scanner-visual { position: relative; width: min(58vw, 230px); aspect-ratio: 1; margin-bottom: 14px; }
+  .ring { position: absolute; inset: 0; border: 2px solid var(--line); border-radius: 50%; }
+  .ring.r2 { inset: 11%; border-color: var(--line-strong); }
+  .core {
+    position: absolute;
+    inset: 22%;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--line-strong);
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--muted);
+    transition: color .2s, border-color .2s, box-shadow .2s;
+  }
+  .core svg { width: 48%; height: auto; }
+  .scanner[data-state="starting"] .core { color: var(--text); border-color: var(--accent); }
+  .scanner[data-state="scanning"] .core { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 52px -4px var(--accent-glow); }
+  .scanner[data-state="scanning"] .ring { inset: 22%; border-color: var(--accent); animation: ripple 2.2s cubic-bezier(.15, .6, .35, 1) infinite; }
+  .scanner[data-state="scanning"] .ring.r2 { animation-delay: 1.1s; }
+  .scanner[data-state="error"] .core,
+  .scanner[data-state="unsupported"] .core { color: var(--warn); border-color: rgba(255, 201, 74, .5); }
+  @keyframes ripple {
+    from { transform: scale(1); opacity: .9; }
+    to { transform: scale(1.8); opacity: 0; }
+  }
+  .door-title { font-size: clamp(1.75rem, 8vw, 2.4rem); font-weight: 900; line-height: 1.1; letter-spacing: -.01em; }
+  .door-sub { max-width: 32ch; color: var(--muted); font-size: 1.05rem; }
+  .scanner[data-state="error"] .door-sub { color: var(--warn-text); }
+  .door-msg { min-height: 1.45em; color: var(--warn); font-weight: 700; }
+
+  .manual summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 58px;
+    padding: 0 18px;
+    font-weight: 800;
+    list-style: none;
+    cursor: pointer;
+  }
+  .manual summary::-webkit-details-marker { display: none; }
+  .manual summary::after { content: "+"; color: var(--muted); font-size: 1.6rem; font-weight: 400; }
+  .manual[open] summary::after { content: "–"; }
+  .manual-body { display: grid; gap: 12px; padding: 0 18px 18px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    appearance: none;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--text-2);
+    font: inherit;
+    font-size: .93rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .chip.ok { border-color: rgba(31, 224, 109, .45); color: var(--ok-text); }
+  .chip.bad { border-color: rgba(255, 90, 108, .45); color: var(--bad-text); }
+
+  /* ---------- Resultado a pantalla completa ---------- */
+  .result {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: calc(24px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom));
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+  }
+  .result.is-ok { background: var(--ok); color: var(--ok-ink); }
+  .result.is-bad { background: var(--bad); color: var(--bad-ink); }
+  .result-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    width: 100%;
+    animation: pop .22s ease-out;
+  }
+  @keyframes pop { from { transform: scale(.94); opacity: .4; } }
+  .result-icon {
+    display: grid;
+    place-items: center;
+    width: min(36vw, 150px);
+    aspect-ratio: 1;
+    border: 7px solid currentColor;
+    border-radius: 50%;
+  }
+  .result-icon svg { width: 60%; height: auto; }
+  .result.is-ok .i-bad, .result.is-bad .i-ok { display: none; }
+  .result-title { font-size: clamp(2.5rem, 12vw, 5rem); font-weight: 900; line-height: .95; text-transform: uppercase; }
+  .result-name { max-width: 100%; font-size: clamp(2.1rem, 10.5vw, 4.2rem); font-weight: 800; line-height: 1.05; overflow-wrap: anywhere; }
+  .result-detail { font-size: 1.2rem; font-weight: 700; opacity: .85; }
+  .result-serial { font-family: var(--mono); font-size: 1rem; font-weight: 700; opacity: .8; }
+  .result-progress { width: 100%; max-width: 480px; height: 6px; overflow: hidden; border-radius: 3px; background: rgba(0, 0, 0, .18); }
+  .result.is-bad .result-progress { background: rgba(255, 255, 255, .25); }
+  .result-progress span {
+    display: block;
+    height: 100%;
+    background: currentColor;
+    transform-origin: left;
+    animation: shrink var(--result-ms, 3500ms) linear forwards;
+  }
+  @keyframes shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+  .result-hint { margin-top: 12px; font-size: .95rem; font-weight: 700; opacity: .75; }
+
+  /* ---------- Modo Administración ---------- */
+  .admin { display: grid; gap: 22px; align-content: start; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat { padding: 12px 8px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); text-align: center; }
+  .stat b { display: block; font-size: 1.75rem; font-weight: 900; line-height: 1.1; }
+  .stat span { color: var(--muted); font-size: .85rem; font-weight: 700; }
+  .block-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; min-height: 42px; }
+  .block-title { color: var(--muted); font-size: 1rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+  .list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .empty { padding: 18px; border: 1px dashed var(--line-strong); border-radius: 16px; color: var(--muted); text-align: center; }
+
+  .enroll { display: grid; gap: 20px; padding: 18px; }
+  .enroll h2 { font-size: 1.35rem; font-weight: 900; }
+  .step {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: .85rem;
+    font-weight: 900;
+    vertical-align: 1px;
+  }
+  .or { display: flex; align-items: center; gap: 10px; margin: 16px 0 10px; color: var(--muted); font-size: .93rem; }
+  .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line-strong); }
+  .scan-status { margin-top: 8px; min-height: 1.4em; color: var(--muted); font-weight: 700; }
+  .scan-status:empty { display: none; }
+  .scan-status.ok { color: var(--ok-text); }
+  #btn-enroll-scan.is-waiting { border-color: var(--accent); color: var(--accent); animation: glow 1.6s ease-in-out infinite; }
+  @keyframes glow { 50% { box-shadow: 0 0 0 6px rgba(199, 125, 255, .2); } }
+  .form-actions { display: grid; grid-template-columns: 1fr 1.5fr; gap: 10px; }
+
+  .rrpp { display: grid; gap: 8px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  .rrpp-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .rrpp-name { font-size: 1.3rem; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+  .rrpp-serial { color: var(--text-2); font-size: 1rem; }
+  .rrpp-meta { color: var(--muted); font-size: .95rem; }
+  .rrpp-meta strong { color: var(--text); }
+  .rrpp-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+  .rrpp.is-blocked { background: transparent; border-style: dashed; }
+  .rrpp.is-blocked .rrpp-name, .rrpp.is-blocked .rrpp-serial { color: var(--muted); }
+  .rrpp.is-new { animation: flash 2s ease-out; }
+  @keyframes flash { from { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(199, 125, 255, .3); } }
+  .pill { flex: none; padding: 5px 10px; border-radius: 999px; font-size: .82rem; font-weight: 800; white-space: nowrap; }
+  .pill-ok { background: var(--ok-soft); color: var(--ok-text); }
+  .pill-bad { background: var(--bad-soft); color: var(--bad-text); }
+
+  .log { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  .log-mark { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 50%; font-weight: 900; }
+  .log.is-ok .log-mark { background: var(--ok-soft); color: var(--ok-text); }
+  .log.is-bad .log-mark { background: var(--bad-soft); color: var(--bad-text); }
+  .log-body { flex: 1; min-width: 0; }
+  .log-line { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .log-main { font-weight: 800; overflow-wrap: anywhere; }
+  .log-time { flex: none; color: var(--text-2); font-size: .95rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .log-sub { color: var(--muted); font-size: .88rem; overflow-wrap: anywhere; }
+  .log .btn-small { margin-top: 10px; }
+  .link-btn {
+    appearance: none;
+    min-height: 42px;
+    padding: 0 6px;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: .93rem;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .stack { display: grid; gap: 10px; margin-top: 12px; }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    z-index: 40;
+    width: max-content;
+    max-width: calc(100% - 32px);
+    padding: 14px 18px;
+    border-radius: 14px;
+    background: var(--text);
+    color: var(--bg);
+    font-weight: 800;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .55);
+    opacity: 0;
+    transform: translate(-50%, 16px);
+    transition: opacity .2s, transform .2s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-iteration-count: 1 !important; transition: none !important; }
+    .scanner[data-state="scanning"] .ring { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-nfc" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round">
+    <path d="M15.1 16.9A10 10 0 0 1 15.1 31.1"/>
+    <path d="M20.7 11.3A18 18 0 0 1 20.7 36.7"/>
+    <path d="M26.4 5.6A26 26 0 0 1 26.4 42.4"/>
+  </symbol>
+</svg>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-row">
+      <div class="brand" aria-label="Rio Pass"><span class="brand-rio">RIO</span><span class="brand-pass">PASS</span></div>
+      <span class="demo-tag">DEMO</span>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Pantalla">
+      <button class="tab" id="tab-door" role="tab" aria-controls="view-door" aria-selected="true" data-view="door">Puerta</button>
+      <button class="tab" id="tab-admin" role="tab" aria-controls="view-admin" aria-selected="false" data-view="admin">Administración</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div id="banner-nfc" class="banner" role="note" hidden>
+    <strong>NFC no disponible.</strong> <span id="banner-nfc-text"></span>
+    Igual podés probar todo cargando los números de serie a mano.
+  </div>
+  <div id="banner-storage" class="banner" role="note" hidden>
+    <strong>No se pueden guardar datos en este navegador</strong> (¿modo incógnito?). La demo funciona, pero lo que cargues se pierde al cerrar la página.
+  </div>
+
+  <!-- ===================== PUERTA ===================== -->
+  <section id="view-door" class="view door" role="tabpanel" aria-labelledby="tab-door">
+    <div class="door-top">
+      <button id="btn-sound" class="sound-toggle" type="button" aria-pressed="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/>
+          <path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>
+        </svg>
+        <span class="label">Sonido activado</span>
+      </button>
+    </div>
+
+    <div id="scanner" class="scanner" data-state="idle">
+      <div class="scanner-visual" aria-hidden="true">
+        <span class="ring"></span>
+        <span class="ring r2"></span>
+        <span class="core"><svg><use href="#i-nfc"/></svg></span>
+      </div>
+      <h1 id="door-title" class="door-title">Listo para escanear</h1>
+      <p id="door-sub" class="door-sub"></p>
+      <p id="door-msg" class="door-msg" role="status" aria-live="polite"></p>
+    </div>
+
+    <button id="btn-scan" class="btn btn-xl" type="button">Escanear tarjeta</button>
+
+    <details id="door-manual" class="card manual">
+      <summary>Probar sin escanear</summary>
+      <form id="form-door-manual" class="manual-body" novalidate>
+        <div>
+          <label for="door-serial">Número de serie de la tarjeta</label>
+          <input id="door-serial" class="input mono" type="text" placeholder="04:91:58:0A:8C:19:90"
+                 autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go">
+        </div>
+        <p id="door-manual-error" class="form-error" role="alert"></p>
+        <button class="btn btn-primary btn-block" type="submit">Validar</button>
+        <div class="chips" id="door-chips">
+          <button type="button" class="chip ok" data-sim="valid" id="chip-valid">Tarjeta válida</button>
+          <button type="button" class="chip bad" data-sim="unknown">Tarjeta desconocida</button>
+        </div>
+      </form>
+    </details>
+  </section>
+
+  <!-- ===================== ADMINISTRACIÓN ===================== -->
+  <section id="view-admin" class="view admin" role="tabpanel" aria-labelledby="tab-admin" hidden>
+    <button id="btn-enroll-open" class="btn btn-primary btn-block" type="button" style="min-height:62px;font-size:1.15rem">
+      + Dar de alta un RRPP
+    </button>
+
+    <form id="form-enroll" class="card enroll" novalidate hidden>
+      <h2>Alta de RRPP</h2>
+      <div>
+        <label for="enroll-name"><span class="step">1</span>Nombre del RRPP</label>
+        <input id="enroll-name" class="input" type="text" maxlength="40" placeholder="Ej: Sofi Martínez"
+               autocomplete="off" autocapitalize="words" enterkeyhint="next">
+      </div>
+      <div>
+        <span class="label"><span class="step">2</span>Tarjeta</span>
+        <div id="enroll-nfc">
+          <button id="btn-enroll-scan" class="btn btn-secondary btn-block" type="button" style="min-height:64px">
+            <svg aria-hidden="true"><use href="#i-nfc"/></svg>
+            <span class="btn-label">Apoyar tarjeta</span>
+          </button>
+          <p id="enroll-scan-status" class="scan-status" aria-live="polite"></p>
+          <div class="or">o escribí el número a mano</div>
+        </div>
+        <input id="enroll-serial" class="input mono" type="text" placeholder="04:91:58:0A:8C:19:90"
+               aria-label="Número de serie de la tarjeta" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done">
+        <p class="hint">En hexadecimal, con o sin “:”.</p>
+      </div>
+      <p id="enroll-error" class="form-error" role="alert"></p>
+      <div class="form-actions">
+        <button id="btn-enroll-cancel" class="btn btn-ghost" type="button">Cancelar</button>
+        <button class="btn btn-primary" type="submit">Guardar</button>
+      </div>
+    </form>
+
+    <div class="stats">
+      <div class="stat"><b id="stat-total">0</b><span>RRPP</span></div>
+      <div class="stat"><b id="stat-active">0</b><span>Habilitados</span></div>
+      <div class="stat"><b id="stat-visits">0</b><span>Ingresos</span></div>
+    </div>
+
+    <section aria-labelledby="h-rrpp">
+      <div class="block-head"><h2 id="h-rrpp" class="block-title">RRPP cargados</h2></div>
+      <ul id="rrpp-list" class="list"></ul>
+    </section>
+
+    <section aria-labelledby="h-log">
+      <div class="block-head">
+        <h2 id="h-log" class="block-title">Actividad reciente</h2>
+        <button id="btn-log-clear" class="link-btn" type="button">Borrar</button>
+      </div>
+      <ul id="log-list" class="list"></ul>
+    </section>
+
+    <section aria-labelledby="h-data">
+      <h2 id="h-data" class="block-title">Datos de la demo</h2>
+      <p class="hint">Todo se guarda solo en este navegador. Otro celular no ve estos datos.</p>
+      <div class="stack">
+        <button id="btn-reset-visits" class="btn btn-secondary btn-block" type="button">Reiniciar contadores de asistencia</button>
+        <button id="btn-reset-all" class="btn btn-danger btn-block" type="button">Restaurar datos de ejemplo</button>
+      </div>
+    </section>
+  </section>
+</main>
+
+<!-- Resultado de la validación (pantalla completa) -->
+<div id="result" class="result" role="alert" hidden>
+  <div class="result-inner">
+    <div class="result-icon" aria-hidden="true">
+      <svg class="i-ok" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></svg>
+      <svg class="i-bad" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"><path d="M14 14l20 20M34 14L14 34"/></svg>
+    </div>
+    <p id="result-title" class="result-title"></p>
+    <p id="result-name" class="result-name"></p>
+    <p id="result-detail" class="result-detail"></p>
+    <p id="result-serial" class="result-serial"></p>
+  </div>
+  <div class="result-progress"><span id="result-bar"></span></div>
+  <p class="result-hint">Tocá para seguir</p>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Configuración ----------
+  const STORAGE_KEY = 'rioPass.v1';
+  const SEED = [{ name: 'Seba', serial: '04:91:58:0A:8C:19:90' }];
+  const RESULT_MS = 3500;   // cuánto queda el resultado en pantalla
+  const LOG_MAX = 50;       // lecturas guardadas en "Actividad reciente"
+  const LOG_SHOWN = 15;
+
+  // ---------- Utilidades ----------
+  const $ = (sel) => document.querySelector(sel);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const uid = () => (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : Date.now().toString(36) + Math.random().toString(36).slice(2);
+
+  // Formato canónico del número de serie: "04:91:58:0A:8C:19:90".
+  // Acepta mayúsculas/minúsculas y separadores ":", "-", "." o espacios.
+  // Devuelve null si no es hexadecimal con cantidad par de dígitos.
+  function normalizeSerial(raw) {
+    const hex = String(raw || '').toUpperCase().replace(/[\s:.\-]/g, '');
+    if (!hex || !/^[0-9A-F]+$/.test(hex) || hex.length % 2) return null;
+    return hex.match(/../g).join(':');
+  }
+  const serialBytes = (serial) => serial.split(':').length;
+
+  function randomSerial() {
+    const bytes = new Uint8Array(7);
+    crypto.getRandomValues(bytes);
+    bytes[0] = 0x04;
+    return normalizeSerial(Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join(''));
+  }
+
+  function fmtTime(t) {
+    return new Date(t).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  }
+  function fmtWhen(t) {
+    const d = new Date(t);
+    if (d.toDateString() === new Date().toDateString()) return `hoy ${fmtTime(t)}`;
+    return `${d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })} ${fmtTime(t)}`;
+  }
+
+  let toastTimer = 0;
+  function toast(msg) {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+
+  // ---------- Almacenamiento (localStorage) ----------
+  let storageOk = true;
+
+  function readStorage() {
+    let raw = null;
+    try {
+      raw = window.localStorage.getItem(STORAGE_KEY);
+    } catch (err) {
+      storageOk = false;
+      return null;
+    }
+    try {
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      return null; // datos corruptos: se vuelve a los de ejemplo
+    }
+  }
+
+  function persist() {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      storageOk = true;
+    } catch (err) {
+      storageOk = false;
+    }
+    $('#banner-storage').hidden = storageOk;
+  }
+
+  function makeRrpp(name, serial) {
+    return { id: uid(), name, serial, active: true, visits: 0, lastVisit: null, createdAt: Date.now() };
+  }
+
+  function seedState() {
+    return { rrpp: SEED.map((s) => makeRrpp(s.name, s.serial)), log: [], sound: true };
+  }
+
+  function loadState() {
+    const data = readStorage();
+    if (!data || !Array.isArray(data.rrpp)) return seedState();
+    return {
+      rrpp: data.rrpp
+        .filter((p) => p && typeof p.name === 'string' && normalizeSerial(p.serial))
+        .map((p) => ({
+          id: String(p.id || uid()),
+          name: p.name,
+          serial: normalizeSerial(p.serial),
+          active: p.active !== false,
+          visits: Math.max(0, Number(p.visits) || 0),
+          lastVisit: Number(p.lastVisit) || null,
+          createdAt: Number(p.createdAt) || Date.now(),
+        })),
+      log: Array.isArray(data.log) ? data.log.filter((e) => e && e.serial).slice(0, LOG_MAX) : [],
+      sound: data.sound !== false,
+    };
+  }
+
+  const state = loadState();
+  persist();
+
+  // ---------- Validación de una tarjeta ----------
+  function checkCard(serial, via) {
+    const person = state.rrpp.find((p) => p.serial === serial) || null;
+    const ok = Boolean(person && person.active);
+    const reason = ok ? null : (person ? 'blocked' : 'unknown');
+    const now = Date.now();
+    if (ok) {
+      person.visits += 1;
+      person.lastVisit = now;
+    }
+    state.log.unshift({ t: now, serial, ok, reason, name: person ? person.name : null, via });
+    if (state.log.length > LOG_MAX) state.log.length = LOG_MAX;
+    persist();
+    renderAdmin();
+    return { ok, reason, person, serial };
+  }
+
+  // ---------- Web NFC ----------
+  function detectNfc() {
+    if ('NDEFReader' in window) return { ok: true };
+    const ua = navigator.userAgent;
+    if (!window.isSecureContext) {
+      return { ok: false, msg: 'La lectura NFC solo funciona si la página se abre por HTTPS.' };
+    }
+    if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) {
+      return { ok: false, msg: 'En iPhone no se pueden leer tarjetas NFC desde el navegador (limitación de iOS). La demo necesita Chrome en un celular Android.' };
+    }
+    if (/Android/.test(ua)) {
+      return { ok: false, msg: 'Este navegador no lee NFC. Abrí este mismo link en Google Chrome.' };
+    }
+    return { ok: false, msg: 'Este dispositivo no puede leer tarjetas. La demo necesita Chrome en un celular Android con NFC.' };
+  }
+  const NFC = detectNfc();
+
+  function nfcErrorMessage(err) {
+    switch (err && err.name) {
+      case 'NotAllowedError':
+        return 'Permiso de NFC denegado. Tocá el ícono a la izquierda de la dirección → Permisos → NFC → Permitir, y volvé a intentar.';
+      case 'NotSupportedError':
+        return 'Este celular no tiene NFC o no es compatible con la lectura desde el navegador.';
+      case 'NotReadableError':
+        return 'El NFC del celular está apagado. Activalo en Ajustes → Conexiones → NFC y volvé a intentar.';
+      default:
+        return `No se pudo iniciar la lectura${err && err.message ? ` (${err.message})` : ''}. Probá de nuevo.`;
+    }
+  }
+
+  // Un solo lector activo a la vez (puerta o alta). Solo se lee serialNumber: nunca se escribe la tarjeta.
+  const nfc = {
+    ctrl: null,
+    async start(onRead, onReadError) {
+      this.stop();
+      const ctrl = new AbortController();
+      this.ctrl = ctrl;
+      try {
+        const reader = new NDEFReader();
+        reader.addEventListener('reading', (e) => { if (!ctrl.signal.aborted) onRead(e.serialNumber); });
+        reader.addEventListener('readingerror', () => { if (!ctrl.signal.aborted) onReadError(); });
+        await reader.scan({ signal: ctrl.signal });
+      } catch (err) {
+        if (this.ctrl === ctrl) this.ctrl = null;
+        throw err;
+      }
+    },
+    stop() {
+      if (this.ctrl) {
+        this.ctrl.abort();
+        this.ctrl = null;
+      }
+    },
+  };
+
+  // ---------- Feedback: vibración, sonido y pantalla encendida ----------
+  let audioCtx = null;
+  function unlockAudio() {
+    // El audio tiene que habilitarse desde un toque del usuario.
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      audioCtx = audioCtx || new AC();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (err) { /* sin sonido */ }
+  }
+
+  function beep(ok) {
+    if (!state.sound || !audioCtx) return;
+    try {
+      const t0 = audioCtx.currentTime;
+      const tones = ok ? [[988, 0, 0.11], [1319, 0.12, 0.22]] : [[196, 0, 0.2], [196, 0.26, 0.34]];
+      for (const [freq, start, dur] of tones) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = ok ? 'sine' : 'square';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, t0 + start);
+        gain.gain.exponentialRampToValueAtTime(ok ? 0.35 : 0.16, t0 + start + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + start + dur);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(t0 + start);
+        osc.stop(t0 + start + dur + 0.02);
+      }
+    } catch (err) { /* sin sonido */ }
+  }
+
+  function vibrate(pattern) {
+    try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (err) { /* opcional */ }
+  }
+
+  let wakeLock = null;
+  let wantWake = false;
+  async function keepScreenOn(on) {
+    wantWake = on;
+    try {
+      if (on && !wakeLock && 'wakeLock' in navigator && document.visibilityState === 'visible') {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => { wakeLock = null; });
+      } else if (!on && wakeLock) {
+        const lock = wakeLock;
+        wakeLock = null;
+        await lock.release();
+      }
+    } catch (err) { /* si falla, la pantalla se apaga sola como siempre */ }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (wantWake && document.visibilityState === 'visible') keepScreenOn(true);
+  });
+
+  // ---------- Modo Puerta ----------
+  const DOOR_TEXT = {
+    idle: ['Listo para escanear', 'Tocá el botón y apoyá la tarjeta en el dorso del celular.'],
+    starting: ['Activando lector…', 'Si aparece un aviso de permiso, tocá “Permitir”.'],
+    scanning: ['Acercá la tarjeta', 'El lector queda activo: podés validar una tarjeta tras otra.'],
+    error: ['No se pudo activar el lector', ''],
+    unsupported: ['Lector NFC no disponible', 'Usá “Probar sin escanear” para ver cómo responde la puerta.'],
+  };
+  const SCAN_LABEL = { idle: 'Escanear tarjeta', starting: 'Activando…', scanning: 'Detener lectura', error: 'Reintentar' };
+
+  const door = { state: 'idle', resultTimer: 0, msgTimer: 0, shownSerial: null };
+
+  function setDoorState(s, detail) {
+    door.state = s;
+    $('#scanner').dataset.state = s;
+    $('#door-title').textContent = DOOR_TEXT[s][0];
+    $('#door-sub').textContent = detail || DOOR_TEXT[s][1];
+    const btn = $('#btn-scan');
+    btn.hidden = s === 'unsupported';
+    btn.disabled = s === 'starting';
+    btn.textContent = SCAN_LABEL[s] || '';
+    btn.classList.toggle('is-stop', s === 'scanning');
+  }
+
+  function doorMsg(msg) {
+    $('#door-msg').textContent = msg;
+    clearTimeout(door.msgTimer);
+    door.msgTimer = setTimeout(() => { $('#door-msg').textContent = ''; }, 4000);
+  }
+
+  async function startDoorScan() {
+    unlockAudio();
+    setDoorState('starting');
+    try {
+      await nfc.start(onDoorRead, () => doorMsg('No se pudo leer la tarjeta. Apoyala de nuevo y dejala quieta un segundo.'));
+      setDoorState('scanning');
+      keepScreenOn(true);
+    } catch (err) {
+      if (err && err.name === 'AbortError') return; // se detuvo a propósito
+      setDoorState('error', nfcErrorMessage(err));
+    }
+  }
+
+  function stopDoorScan() {
+    nfc.stop();
+    keepScreenOn(false);
+    setDoorState(NFC.ok ? 'idle' : 'unsupported');
+  }
+
+  function onDoorRead(rawSerial) {
+    const serial = normalizeSerial(rawSerial);
+    if (!serial) {
+      doorMsg('La tarjeta no informó un número de serie legible.');
+      return;
+    }
+    // Ignora una segunda lectura de la misma tarjeta mientras su resultado sigue en pantalla.
+    if (!$('#result').hidden && serial === door.shownSerial) return;
+    showResult(checkCard(serial, 'nfc'));
+  }
+
+  function showResult(r) {
+    const el = $('#result');
+    el.classList.toggle('is-ok', r.ok);
+    el.classList.toggle('is-bad', !r.ok);
+    $('#result-title').textContent = r.ok ? 'Acceso permitido' : 'Tarjeta no reconocida';
+    $('#result-name').textContent = r.ok ? r.person.name : '';
+    $('#result-name').hidden = !r.ok;
+    $('#result-detail').textContent = r.ok
+      ? `RRPP · ingreso n.º ${r.person.visits}`
+      : (r.reason === 'blocked' ? 'Tarjeta bloqueada' : 'No está registrada');
+    $('#result-serial').textContent = r.ok ? '' : r.serial;
+    $('#result-serial').hidden = r.ok;
+
+    // Reinicia la barra que muestra cuánto falta para volver a escanear.
+    el.style.setProperty('--result-ms', `${RESULT_MS}ms`);
+    const bar = $('#result-bar');
+    bar.style.animation = 'none';
+    void bar.offsetWidth;
+    bar.style.animation = '';
+    const inner = el.querySelector('.result-inner');
+    inner.style.animation = 'none';
+    void inner.offsetWidth;
+    inner.style.animation = '';
+
+    el.hidden = false;
+    door.shownSerial = r.serial;
+    vibrate(r.ok ? 150 : [250, 100, 250]);
+    beep(r.ok);
+    clearTimeout(door.resultTimer);
+    door.resultTimer = setTimeout(hideResult, RESULT_MS);
+  }
+
+  function hideResult() {
+    clearTimeout(door.resultTimer);
+    $('#result').hidden = true;
+    door.shownSerial = null;
+  }
+
+  $('#btn-scan').addEventListener('click', () => {
+    if (door.state === 'scanning') stopDoorScan();
+    else if (door.state !== 'starting') startDoorScan();
+  });
+  $('#result').addEventListener('click', hideResult);
+
+  $('#form-door-manual').addEventListener('submit', (e) => {
+    e.preventDefault();
+    unlockAudio();
+    const input = $('#door-serial');
+    const serial = normalizeSerial(input.value);
+    if (!serial) {
+      $('#door-manual-error').textContent = 'Número inválido. Tiene que ser hexadecimal, por ejemplo 04:91:58:0A:8C:19:90.';
+      input.focus();
+      return;
+    }
+    $('#door-manual-error').textContent = '';
+    input.value = serial;
+    input.blur();
+    showResult(checkCard(serial, 'manual'));
+  });
+
+  $('#door-chips').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-sim]');
+    if (!chip) return;
+    unlockAudio();
+    const valid = state.rrpp.find((p) => p.active);
+    const serial = chip.dataset.sim === 'valid' ? (valid && valid.serial) : randomSerial();
+    if (!serial) return;
+    $('#door-serial').value = serial;
+    $('#door-manual-error').textContent = '';
+    showResult(checkCard(serial, 'manual'));
+  });
+
+  function renderSound() {
+    const btn = $('#btn-sound');
+    btn.setAttribute('aria-pressed', String(state.sound));
+    btn.querySelector('.label').textContent = state.sound ? 'Sonido activado' : 'Sonido apagado';
+  }
+  $('#btn-sound').addEventListener('click', () => {
+    state.sound = !state.sound;
+    persist();
+    renderSound();
+    if (state.sound) {
+      unlockAudio();
+      beep(true);
+    }
+  });
+
+  // ---------- Modo Administración ----------
+  const enroll = { scanning: false };
+
+  function setEnrollScan(waiting, text, ok) {
+    enroll.scanning = waiting;
+    const btn = $('#btn-enroll-scan');
+    btn.classList.toggle('is-waiting', waiting);
+    btn.querySelector('.btn-label').textContent = waiting ? 'Esperando tarjeta… (tocá para cancelar)' : 'Apoyar tarjeta';
+    const status = $('#enroll-scan-status');
+    status.textContent = text || '';
+    status.classList.toggle('ok', Boolean(ok));
+  }
+
+  function setEnrollError(msg, focusSel) {
+    $('#enroll-error').textContent = msg;
+    if (msg && focusSel) $(focusSel).focus();
+  }
+
+  function openEnroll(serial) {
+    const form = $('#form-enroll');
+    form.reset();
+    $('#enroll-serial').value = serial || '';
+    setEnrollError('');
+    setEnrollScan(false);
+    form.hidden = false;
+    $('#btn-enroll-open').hidden = true;
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('#enroll-name').focus({ preventScroll: true });
+  }
+
+  function closeEnroll() {
+    stopEnrollScan();
+    $('#form-enroll').hidden = true;
+    $('#btn-enroll-open').hidden = false;
+  }
+
+  async function startEnrollScan() {
+    setEnrollError('');
+    setEnrollScan(true, 'Activando lector…');
+    try {
+      await nfc.start(onEnrollRead, () => setEnrollScan(true, 'No se pudo leer. Apoyala de nuevo y dejala quieta un segundo.'));
+      if (enroll.scanning) setEnrollScan(true, 'Acercá la tarjeta al dorso del celular.');
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+      setEnrollScan(false);
+      setEnrollError(nfcErrorMessage(err));
+    }
+  }
+
+  function stopEnrollScan() {
+    if (enroll.scanning) nfc.stop();
+    setEnrollScan(false);
+  }
+
+  function onEnrollRead(rawSerial) {
+    nfc.stop();
+    const serial = normalizeSerial(rawSerial);
+    if (!serial) {
+      setEnrollScan(false);
+      setEnrollError('La tarjeta no informó un número de serie legible. Probá con otra.');
+      return;
+    }
+    vibrate(80);
+    $('#enroll-serial').value = serial;
+    if ($('#enroll-name').value.trim()) {
+      setEnrollScan(false, `✓ Tarjeta leída: ${serial}`, true);
+      submitEnroll();
+    } else {
+      setEnrollScan(false, '✓ Tarjeta leída. Escribí el nombre y tocá Guardar.', true);
+      $('#enroll-name').focus();
+    }
+  }
+
+  function submitEnroll() {
+    const name = $('#enroll-name').value.trim().replace(/\s+/g, ' ');
+    const rawSerial = $('#enroll-serial').value.trim();
+    const serial = normalizeSerial(rawSerial);
+
+    if (!name) return setEnrollError('Escribí el nombre del RRPP.', '#enroll-name');
+    if (!rawSerial) {
+      return setEnrollError(NFC.ok ? 'Apoyá la tarjeta o escribí su número de serie.' : 'Escribí el número de serie de la tarjeta.');
+    }
+    if (!serial || serialBytes(serial) < 4 || serialBytes(serial) > 10) {
+      return setEnrollError('Número de serie inválido: tiene que ser hexadecimal, de 4 a 10 bytes (ej. 04:91:58:0A:8C:19:90).', '#enroll-serial');
+    }
+    const owner = state.rrpp.find((p) => p.serial === serial);
+    if (owner) return setEnrollError(`Esa tarjeta ya está asignada a ${owner.name}.`);
+
+    const person = makeRrpp(name, serial);
+    state.rrpp.push(person);
+    persist();
+    renderAdmin();
+    closeEnroll();
+    toast(`✓ Alta confirmada: ${name}`);
+    highlight(person.id);
+  }
+
+  function highlight(id) {
+    const li = document.querySelector(`.rrpp[data-id="${CSS.escape(id)}"]`);
+    if (!li) return;
+    li.classList.add('is-new');
+    li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => li.classList.remove('is-new'), 2000);
+  }
+
+  $('#btn-enroll-open').addEventListener('click', () => openEnroll());
+  $('#btn-enroll-cancel').addEventListener('click', closeEnroll);
+  $('#btn-enroll-scan').addEventListener('click', () => {
+    if (enroll.scanning) stopEnrollScan();
+    else startEnrollScan();
+  });
+  $('#form-enroll').addEventListener('submit', (e) => {
+    e.preventDefault();
+    submitEnroll();
+  });
+  $('#enroll-name').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (NFC.ok) e.target.blur();
+    else $('#enroll-serial').focus();
+  });
+  for (const sel of ['#enroll-serial', '#door-serial']) {
+    $(sel).addEventListener('blur', (e) => {
+      const serial = normalizeSerial(e.target.value);
+      if (serial) e.target.value = serial;
+    });
+  }
+
+  function rrppItem(p) {
+    const visits = `<strong>${p.visits}</strong> ${p.visits === 1 ? 'ingreso' : 'ingresos'}`;
+    const last = p.lastVisit ? ` · último ${esc(fmtWhen(p.lastVisit))}` : '';
+    return `
+      <li class="rrpp${p.active ? '' : ' is-blocked'}" data-id="${esc(p.id)}">
+        <div class="rrpp-top">
+          <p class="rrpp-name">${esc(p.name)}</p>
+          <span class="pill ${p.active ? 'pill-ok' : 'pill-bad'}">${p.active ? 'Habilitado' : 'Bloqueado'}</span>
+        </div>
+        <p class="rrpp-serial mono">${esc(p.serial)}</p>
+        <p class="rrpp-meta">${visits}${last}</p>
+        <div class="rrpp-actions">
+          <button type="button" class="btn btn-secondary" data-action="toggle">${p.active ? 'Bloquear' : 'Habilitar'}</button>
+          <button type="button" class="btn btn-danger" data-action="delete">Eliminar</button>
+        </div>
+      </li>`;
+  }
+
+  function logItem(e) {
+    let label = 'No reconocida';
+    if (e.ok) label = esc(e.name);
+    else if (e.reason === 'blocked') label = `Bloqueada${e.name ? ` · ${esc(e.name)}` : ''}`;
+    const canEnroll = !e.ok && !state.rrpp.some((p) => p.serial === e.serial);
+    return `
+      <li class="log ${e.ok ? 'is-ok' : 'is-bad'}">
+        <span class="log-mark" aria-hidden="true">${e.ok ? '✓' : '✕'}</span>
+        <div class="log-body">
+          <div class="log-line">
+            <p class="log-main">${label}</p>
+            <span class="log-time">${esc(fmtTime(e.t))}</span>
+          </div>
+          <p class="log-sub"><span class="mono">${esc(e.serial)}</span>${e.via === 'manual' ? ' · manual' : ''}</p>
+          ${canEnroll ? `<button type="button" class="btn btn-secondary btn-small" data-enroll="${esc(e.serial)}">Dar de alta esta tarjeta</button>` : ''}
+        </div>
+      </li>`;
+  }
+
+  function renderAdmin() {
+    const people = [...state.rrpp].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+    $('#stat-total').textContent = people.length;
+    $('#stat-active').textContent = people.filter((p) => p.active).length;
+    $('#stat-visits').textContent = people.reduce((n, p) => n + p.visits, 0);
+
+    $('#rrpp-list').innerHTML = people.length
+      ? people.map(rrppItem).join('')
+      : '<li class="empty">Todavía no hay RRPP cargados. Tocá “Dar de alta un RRPP”.</li>';
+
+    $('#log-list').innerHTML = state.log.length
+      ? state.log.slice(0, LOG_SHOWN).map(logItem).join('')
+      : '<li class="empty">Sin lecturas todavía. Las validaciones de la puerta aparecen acá.</li>';
+    $('#btn-log-clear').hidden = !state.log.length;
+
+    const valid = state.rrpp.find((p) => p.active);
+    $('#chip-valid').hidden = !valid;
+    if (valid) $('#chip-valid').textContent = `Tarjeta válida (${valid.name})`;
+  }
+
+  $('#rrpp-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const person = state.rrpp.find((p) => p.id === btn.closest('[data-id]').dataset.id);
+    if (!person) return;
+
+    if (btn.dataset.action === 'toggle') {
+      person.active = !person.active;
+      persist();
+      renderAdmin();
+      toast(person.active ? `Tarjeta de ${person.name} habilitada` : `Tarjeta de ${person.name} bloqueada`);
+    } else if (btn.dataset.action === 'delete') {
+      if (!confirm(`¿Eliminar a ${person.name}?\nSe borran su tarjeta y su contador de asistencia.`)) return;
+      state.rrpp = state.rrpp.filter((p) => p !== person);
+      persist();
+      renderAdmin();
+      toast(`${person.name} eliminado`);
+    }
+  });
+
+  $('#log-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-enroll]');
+    if (btn) openEnroll(btn.dataset.enroll);
+  });
+
+  $('#btn-log-clear').addEventListener('click', () => {
+    state.log = [];
+    persist();
+    renderAdmin();
+  });
+
+  $('#btn-reset-visits').addEventListener('click', () => {
+    if (!confirm('¿Poner en cero la asistencia de todos los RRPP?')) return;
+    for (const p of state.rrpp) {
+      p.visits = 0;
+      p.lastVisit = null;
+    }
+    persist();
+    renderAdmin();
+    toast('Contadores en cero');
+  });
+
+  $('#btn-reset-all').addEventListener('click', () => {
+    if (!confirm('¿Restaurar los datos de ejemplo?\nSe borran todos los RRPP, los contadores y la actividad.')) return;
+    const fresh = seedState();
+    state.rrpp = fresh.rrpp;
+    state.log = fresh.log;
+    persist();
+    closeEnroll();
+    renderAdmin();
+    toast('Datos de ejemplo restaurados');
+  });
+
+  // ---------- Navegación entre pantallas ----------
+  let view = null;
+
+  function showView(name) {
+    if (view === name) return;
+    // Al cambiar de pantalla se apaga cualquier lectura en curso.
+    nfc.stop();
+    keepScreenOn(false);
+    hideResult();
+    setDoorState(NFC.ok ? 'idle' : 'unsupported');
+    setEnrollScan(false);
+
+    view = name;
+    for (const tab of document.querySelectorAll('.tab')) {
+      tab.setAttribute('aria-selected', String(tab.dataset.view === name));
+    }
+    $('#view-door').hidden = name !== 'door';
+    $('#view-admin').hidden = name !== 'admin';
+    const hash = name === 'admin' ? '#admin' : '#puerta';
+    if (location.hash !== hash) history.replaceState(null, '', hash);
+    window.scrollTo(0, 0);
+  }
+
+  for (const tab of document.querySelectorAll('.tab')) {
+    tab.addEventListener('click', () => showView(tab.dataset.view));
+  }
+  window.addEventListener('hashchange', () => showView(location.hash === '#admin' ? 'admin' : 'door'));
+
+  // ---------- Inicio ----------
+  if (!NFC.ok) {
+    $('#banner-nfc-text').textContent = NFC.msg;
+    $('#banner-nfc').hidden = false;
+    $('#door-manual').open = true;
+    $('#enroll-nfc').hidden = true;
+  }
+  renderSound();
+  renderAdmin();
+  showView(location.hash === '#admin' ? 'admin' : 'door');
+})();
+</script>
+</body>
+</html>
