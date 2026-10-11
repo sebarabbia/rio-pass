@@ -88,6 +88,8 @@ Volvé a entrar: aparece **Panel** en el menú. Desde ahí se asignan los demás
 
 ## Deploy (Vercel)
 
+Producción: **https://rio-pass.vercel.app** (proyecto `rio-pass` en Vercel, funciones en São Paulo `gru1` junto a la base de datos, ver `vercel.json`).
+
 1. En [vercel.com/new](https://vercel.com/new), importar el repo `sebarabbia/rio-pass` (rama `main`) y tocar **Deploy**. No hace falta cargar variables: la URL y la publishable key de Supabase son públicas y están en `src/lib/supabase/config.ts` (se pueden pisar con `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`).
 2. Opcional: `NEXT_PUBLIC_SITE_URL` con la URL final, si se usa un dominio propio para los links de los QR.
 3. En Supabase → Authentication → URL Configuration: Site URL = la URL de Vercel, y agregar `<url>/auth/confirm` a Redirect URLs.
