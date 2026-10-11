@@ -7,6 +7,7 @@ import { hasRole, requireUser } from '@/lib/auth'
 import { flyerUrl } from '@/lib/events'
 import { toLocalInputs } from '@/lib/format'
 import { createClient } from '@/lib/supabase/server'
+import { DeleteEventButton } from '../../DeleteEventButton'
 import { EventForm } from '../../EventForm'
 
 export const metadata: Metadata = { title: 'Editar evento' }
@@ -68,6 +69,11 @@ async function EditEvent({ params }: { params: PageProps<'/organizador/eventos/[
           seasonId: event.season_id,
         }}
       />
+      <section className="card danger-zone" aria-labelledby="danger-title">
+        <p id="danger-title" className="card-title">Eliminar evento</p>
+        <p className="muted">Se borran también sus invitaciones y el registro de la puerta. Si solo querés sacarlo de la web, pasalo a borrador.</p>
+        <DeleteEventButton id={event.id} name={event.name} />
+      </section>
     </div>
   )
 }

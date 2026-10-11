@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Cormorant_Garamond } from 'next/font/google'
+import { siteUrl } from '@/lib/site'
 import './globals.css'
 
 const serif = Cormorant_Garamond({
@@ -11,8 +12,14 @@ const serif = Cormorant_Garamond({
 
 export const metadata: Metadata = {
   title: { default: 'Rio Pass', template: '%s · Rio Pass' },
-  description: 'Las fechas de Rio, tu cuenta, tus entradas y tu tarjeta. Temporada de verano en Paraná.',
+  description: 'Las fechas de Rio, tus invitaciones y tus puntos. Temporada de verano en Paraná.',
   applicationName: 'Rio Pass',
+  // Base para las URLs absolutas de las imágenes de vista previa (opengraph-image).
+  metadataBase: new URL(siteUrl()),
+  openGraph: { siteName: 'Rio Pass', locale: 'es_AR', type: 'website' },
+  twitter: { card: 'summary_large_image' },
+  // Instalable en la pantalla de inicio (ver app/manifest.ts).
+  appleWebApp: { capable: true, title: 'Rio Pass', statusBarStyle: 'black-translucent' },
 }
 
 export const viewport: Viewport = {

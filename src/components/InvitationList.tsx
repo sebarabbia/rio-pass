@@ -1,4 +1,5 @@
 import { voidInvitation } from '@/actions/invitations'
+import { ActionForm } from '@/components/ActionForm'
 import { ConfirmSubmit } from '@/components/ConfirmSubmit'
 import { ShareInvitation } from '@/components/ShareInvitation'
 
@@ -64,13 +65,13 @@ export function InvitationList({ rows, eventId, eventName, when, origin, showIss
                   when={when}
                   compact
                 />
-                <form action={voidInvitation}>
+                <ActionForm action={voidInvitation} success={`QR de ${name} anulado`}>
                   <input type="hidden" name="ticketId" value={row.id} />
                   <input type="hidden" name="eventId" value={eventId} />
                   <ConfirmSubmit message={`¿Anular el QR de ${name}? Ya no va a poder entrar con él.`} className="btn btn-danger btn-sm">
                     Anular
                   </ConfirmSubmit>
-                </form>
+                </ActionForm>
               </div>
             )}
           </li>

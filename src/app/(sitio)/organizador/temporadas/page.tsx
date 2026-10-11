@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { ActionForm } from '@/components/ActionForm'
 import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
@@ -48,10 +49,10 @@ async function Seasons() {
               {s.is_current ? (
                 <span className="pill pill-ok">Actual</span>
               ) : (
-                <form action={setCurrentSeason}>
+                <ActionForm action={setCurrentSeason} success={`${s.name} es la temporada actual`}>
                   <input type="hidden" name="id" value={s.id} />
                   <button type="submit" className="btn btn-secondary btn-sm">Marcar actual</button>
-                </form>
+                </ActionForm>
               )}
             </li>
           ))}

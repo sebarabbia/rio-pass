@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect, useRef } from 'react'
 import { issueInvitation, type InvitationFormState } from '@/actions/invitations'
 import { ShareInvitation } from '@/components/ShareInvitation'
 import { SubmitButton } from '@/components/SubmitButton'
@@ -16,11 +16,20 @@ type Props = {
 
 export function InvitationForm({ eventId, eventName, when, origin, sectors, disabled }: Props) {
   const [state, formAction] = useActionState<InvitationFormState, FormData>(issueInvitation, {})
+  const successRef = useRef<HTMLDivElement>(null)
+
+  // En el celular el aviso queda arriba del formulario: se lleva a la vista para
+  // que el RRPP vea enseguida el botón de WhatsApp.
+  useEffect(() => {
+    if (!state.created) return
+    successRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    successRef.current?.focus({ preventScroll: true })
+  }, [state.created])
 
   return (
     <div className="stack">
       {state.created && (
-        <div className="card success-card" role="status">
+        <div className="card success-card" role="status" ref={successRef} tabIndex={-1}>
           <p className="card-title">Invitación lista para {state.created.holderName}</p>
           <p className="muted">Mandale el link: ahí ve su QR para mostrar en la puerta.</p>
           <ShareInvitation

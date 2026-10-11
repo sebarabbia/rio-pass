@@ -23,6 +23,10 @@ export function authErrorMessage(error: AuthError) {
     case 'over_email_send_rate_limit':
     case 'over_request_rate_limit':
       return 'Hubo demasiados intentos seguidos. Esperá unos minutos y probá de nuevo.'
+    case 'same_password':
+      return 'Es la misma contraseña que ya tenías. Elegí otra.'
+    case 'reauthentication_needed':
+      return 'Por seguridad, volvé a ingresar y probá de nuevo.'
     case 'signup_disabled':
       return 'El registro está deshabilitado por el momento.'
     default:

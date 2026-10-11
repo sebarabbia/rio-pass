@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { SiteHeader } from '@/components/SiteHeader'
+import { Toaster } from '@/components/Toast'
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
           <Link href="/">Eventos</Link> · <Link href="/ranking">Ranking</Link> · <Link href="/cuenta">Mi cuenta</Link>
         </p>
       </footer>
+      <Toaster />
     </>
   )
 }

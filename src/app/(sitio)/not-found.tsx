@@ -5,7 +5,7 @@ export default function NotFound() {
     <div className="page center">
       <p className="kicker">Error 404</p>
       <h1 className="page-title">No encontramos esta página</h1>
-      <p className="muted">Puede que el evento ya no esté publicado.</p>
+      <p className="muted">Revisá el link: puede que esté incompleto o que el evento ya no esté publicado.</p>
       <Link href="/" className="btn btn-primary">Ver próximas fechas</Link>
     </div>
   )

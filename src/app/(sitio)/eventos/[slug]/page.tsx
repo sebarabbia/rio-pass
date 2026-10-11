@@ -3,18 +3,23 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { Logo } from '@/components/Logo'
+import { ShareEvent } from '@/components/ShareEvent'
 import { flyerUrl, getPublicEvent } from '@/lib/events'
-import { formatLongDay, formatTime } from '@/lib/format'
+import { formatLongDay, formatShortDay, formatTime } from '@/lib/format'
+import { siteUrl } from '@/lib/site'
+
+function mapsUrl(venue: string) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${venue}, Paraná, Entre Ríos`)}`
+}
 
 export async function generateMetadata({ params }: PageProps<'/eventos/[slug]'>): Promise<Metadata> {
   const { slug } = await params
   const event = await getPublicEvent(slug)
   if (!event) return { title: 'Evento no encontrado' }
-  const flyer = flyerUrl(event.flyer_path)
+  // La imagen de vista previa sale de opengraph-image.tsx (flyer convertido a JPEG).
   return {
     title: event.name,
     description: `${formatLongDay(event.starts_at)} · ${formatTime(event.starts_at)} h · ${event.venue}.`,
-    openGraph: flyer ? { images: [{ url: flyer }] } : undefined,
   }
 }
 
@@ -53,15 +58,24 @@ async function EventDetail({ params }: { params: PageProps<'/eventos/[slug]'>['p
         Desde las {formatTime(event.starts_at)} h{event.ends_at ? ` hasta las ${formatTime(event.ends_at)} h` : ''}
         <br />
         {event.venue}
+        {event.sectors.length > 0 && (
+          <>
+            <br />
+            <span className="muted">{event.sectors.join(' · ')}</span>
+          </>
+        )}
       </p>
 
-      {event.sectors.length > 0 && (
-        <ul className="chips" aria-label="Sectores">
-          {event.sectors.map((s) => (
-            <li key={s} className="chip">{s}</li>
-          ))}
-        </ul>
-      )}
+      <div className="event-detail-actions">
+        <ShareEvent
+          url={`${siteUrl()}/eventos/${event.slug}`}
+          title={`${event.name} · Rio`}
+          text={`${event.name} en Rio, ${formatShortDay(event.starts_at)} ${formatTime(event.starts_at)} h`}
+        />
+        <a href={mapsUrl(event.venue)} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">
+          Cómo llegar
+        </a>
+      </div>
 
       {event.description && <p className="event-detail-description">{event.description}</p>}
 

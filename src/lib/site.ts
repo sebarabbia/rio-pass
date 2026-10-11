@@ -21,6 +21,19 @@ export async function getOrigin() {
   return `${proto}://${host}`
 }
 
+/**
+ * Igual que getOrigin pero sin leer el request (sirve en páginas cacheadas y en
+ * metadataBase). En local devuelve localhost.
+ */
+export function siteUrl() {
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')
+  if (process.env.VERCEL_ENV === 'production' && process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  }
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  return 'http://localhost:3000'
+}
+
 /** Link público de un QR: es lo que se manda por WhatsApp y lo que codifica el QR. */
 export function ticketUrl(origin: string, code: string) {
   return `${origin}/qr/${code}`

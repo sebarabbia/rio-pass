@@ -1,6 +1,6 @@
 'use server'
 
-import { updateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { parseSectors } from '@/lib/event-defaults'
 import { EVENTS_TAG, FLYERS_BUCKET } from '@/lib/events'
@@ -112,9 +112,10 @@ export async function setEventStatus(formData: FormData) {
   const status = String(formData.get('status') ?? '') as EventStatus
   if (!id || !STATUSES.includes(status)) return
 
-  await supabase.from('events').update({ status }).eq('id', id)
+  const { error } = await supabase.from('events').update({ status }).eq('id', id)
+  if (error) throw new Error('No se pudo cambiar el estado del evento.')
   updateTag(EVENTS_TAG)
-  redirect('/organizador')
+  revalidatePath('/organizador')
 }
 
 export async function deleteEvent(formData: FormData) {

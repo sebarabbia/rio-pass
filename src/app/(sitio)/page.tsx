@@ -3,7 +3,9 @@ import { Suspense } from 'react'
 import { EventCard } from '@/components/EventCard'
 import { Logo } from '@/components/Logo'
 import { RankingList } from '@/components/RankingList'
+import { getCurrentUser } from '@/lib/auth'
 import { getUpcomingEvents } from '@/lib/events'
+import { firstName } from '@/lib/format'
 import { getPublicPodium, PRIZE_POSITIONS } from '@/lib/ranking'
 
 export default function HomePage() {
@@ -13,13 +15,9 @@ export default function HomePage() {
         <Logo className="hero-logo" />
         <p className="kicker">Temporada de verano · Paraná</p>
         <h1 className="hero-title">Las noches de Rio, en un solo lugar.</h1>
-        <p className="hero-sub">
-          Mirá las próximas fechas y creá tu cuenta para tener a mano tus entradas, invitaciones y puntos.
-        </p>
-        <div className="hero-actions">
-          <Link href="#eventos" className="btn btn-primary">Ver fechas</Link>
-          <Link href="/registro" className="btn btn-secondary">Crear cuenta</Link>
-        </div>
+        <Suspense fallback={<div className="hero-actions is-placeholder" aria-hidden="true" />}>
+          <HeroActions />
+        </Suspense>
       </section>
 
       <section id="eventos" className="section" aria-labelledby="eventos-title">
@@ -49,6 +47,32 @@ async function RankingTeaser() {
       {rows.length > 0 && <RankingList rows={rows} compact />}
       <Link href="/ranking" className="btn btn-secondary">Ver ranking</Link>
     </section>
+  )
+}
+
+/** Los botones dependen de la sesión: a quien ya tiene cuenta no se le ofrece crearla. */
+async function HeroActions() {
+  const user = await getCurrentUser()
+  if (!user) {
+    return (
+      <>
+        <p className="hero-sub">Creá tu cuenta para tener a mano tus invitaciones y sumar puntos cada noche que venís.</p>
+        <div className="hero-actions">
+          <Link href="/registro" className="btn btn-primary">Crear cuenta</Link>
+          <Link href="/ingresar" className="btn btn-secondary">Ingresar</Link>
+        </div>
+      </>
+    )
+  }
+  const name = firstName(user.fullName)
+  return (
+    <>
+      <p className="hero-sub">{name ? `Hola, ${name}. ` : ''}Tus QR y tus puntos están en tu cuenta.</p>
+      <div className="hero-actions">
+        <Link href="/cuenta" className="btn btn-primary">Mis QR</Link>
+        <Link href="/ranking" className="btn btn-secondary">Ranking</Link>
+      </div>
+    </>
   )
 }
 

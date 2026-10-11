@@ -43,7 +43,7 @@ async function PointsAdmin({ searchParams }: { searchParams: PageProps<'/organiz
   }
 
   return (
-    <div className="page">
+    <div className="page wide">
       <p className="kicker">Panel de organizador</p>
       <h1 className="page-title">Puntos</h1>
       <OrganizerNav current="puntos" />

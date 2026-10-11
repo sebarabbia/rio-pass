@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { ActionForm } from '@/components/ActionForm'
 import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser, ROLE_LABELS, type AppRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
@@ -45,7 +46,7 @@ async function Users({ searchParams }: { searchParams: PageProps<'/organizador/u
   const { data: users, error } = await query
 
   return (
-    <div className="page">
+    <div className="page wide">
       <p className="kicker">Panel de organizador</p>
       <h1 className="page-title">Usuarios</h1>
       <OrganizerNav current="usuarios" />
@@ -69,7 +70,7 @@ async function Users({ searchParams }: { searchParams: PageProps<'/organizador/u
         </div>
       )}
 
-      <ul className="list">
+      <ul className="list admin-grid">
         {users?.map((u) => {
           const roles = new Set(u.user_roles.map((r) => r.role))
           return (
@@ -84,7 +85,7 @@ async function Users({ searchParams }: { searchParams: PageProps<'/organizador/u
                   const active = roles.has(role)
                   const locked = u.id === me.id && role === 'organizador'
                   return (
-                    <form key={role} action={toggleRole}>
+                    <ActionForm key={role} action={toggleRole} success={`${ROLE_LABELS[role]}: ${active ? 'quitado' : 'asignado'} a ${u.full_name || 'este usuario'}`}>
                       <input type="hidden" name="userId" value={u.id} />
                       <input type="hidden" name="role" value={role} />
                       <input type="hidden" name="enable" value={active ? '0' : '1'} />
@@ -98,7 +99,7 @@ async function Users({ searchParams }: { searchParams: PageProps<'/organizador/u
                         {active ? '✓ ' : '+ '}
                         {ROLE_LABELS[role]}
                       </button>
-                    </form>
+                    </ActionForm>
                   )
                 })}
               </div>

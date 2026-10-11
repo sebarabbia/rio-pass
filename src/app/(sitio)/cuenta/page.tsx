@@ -4,8 +4,10 @@ import { Suspense } from 'react'
 import { logout } from '@/app/auth/actions'
 import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser } from '@/lib/auth'
-import { firstName, formatShortDay, formatTime } from '@/lib/format'
+import { upcomingSince } from '@/lib/events'
+import { firstName, formatLongDay, formatShortDay, formatTime } from '@/lib/format'
 import { getMyRanking, REASON_LABELS, standingMessage } from '@/lib/ranking'
+import { getOrigin, qrSvg, ticketUrl } from '@/lib/site'
 import { createClient } from '@/lib/supabase/server'
 import { ProfileForm } from './ProfileForm'
 
@@ -26,7 +28,7 @@ async function Account() {
   const user = await requireUser('/cuenta')
   const supabase = await createClient()
 
-  const [{ data: cards }, { data: tickets }, me] = await Promise.all([
+  const [{ data: cards }, { data: tickets }, me, origin] = await Promise.all([
     supabase.from('nfc_cards').select('id, uid, status, label').eq('user_id', user.id),
     supabase
       .from('tickets')
@@ -34,7 +36,16 @@ async function Account() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     getMyRanking(),
+    getOrigin(),
   ])
+
+  // QR que todavía sirven (válidos y de fechas que no pasaron) y el resto, que va plegado.
+  const since = upcomingSince()
+  const isUpcoming = (t: NonNullable<typeof tickets>[number]) => t.status === 'valido' && !!t.events && t.events.starts_at >= since
+  const upcomingTickets = (tickets ?? []).filter(isUpcoming).sort((a, b) => a.events!.starts_at.localeCompare(b.events!.starts_at))
+  const pastTickets = (tickets ?? []).filter((t) => !isUpcoming(t))
+  const nextTicket = upcomingTickets[0]
+  const nextQr = nextTicket ? await qrSvg(ticketUrl(origin, nextTicket.code)) : null
 
   // Últimos movimientos de puntos de la temporada actual.
   const { data: movements } = me
@@ -53,6 +64,21 @@ async function Account() {
     <div className="page">
       <p className="kicker">Mi cuenta</p>
       <h1 className="page-title">{name ? `Hola, ${name}` : 'Hola'}</h1>
+
+      {/* ---------------- Tu próxima entrada: el QR a mano, sin buscarlo ---------------- */}
+      {nextTicket && nextQr && nextTicket.events && (
+        <section className="card next-ticket" aria-labelledby="proxima">
+          <p className="kicker" id="proxima">Tu próxima entrada</p>
+          <p className="card-title">{nextTicket.events.name}</p>
+          <p className="muted">
+            {formatLongDay(nextTicket.events.starts_at)} · {formatTime(nextTicket.events.starts_at)} h
+            {nextTicket.ticket_types?.name ? ` · ${nextTicket.ticket_types.name}` : ''}
+          </p>
+          <div className="next-ticket-qr" role="img" aria-label="Código QR de ingreso" dangerouslySetInnerHTML={{ __html: nextQr }} />
+          <Link href={`/qr/${nextTicket.code}`} className="btn btn-primary btn-block">Ver en grande</Link>
+          <p className="muted small">Sacale una captura: si en la puerta no hay señal, la mostrás igual.</p>
+        </section>
+      )}
       {/* Accesos de staff: solo los ve quien tiene ese rol. Un cliente no ve nada de esto. */}
       {hasRole(user, 'organizador') && (
         <Link href="/organizador" className="btn btn-primary btn-block">Ir al panel de organizador</Link>
@@ -87,34 +113,19 @@ async function Account() {
       {/* ---------------- Mis QR ---------------- */}
       <section className="section-block" aria-labelledby="qr">
         <h2 id="qr" className="block-title">Mis QR</h2>
-        {tickets && tickets.length > 0 ? (
-          <ul className="list">
-            {tickets.map((ticket) => (
-              <li key={ticket.id}>
-                <Link href={`/qr/${ticket.code}`} className="card row link-card">
-                  <div>
-                    <p className="card-title">{ticket.events?.name ?? 'Evento'}</p>
-                    <p className="muted">
-                      {[
-                        TICKET_KIND[ticket.kind],
-                        ticket.ticket_types?.name,
-                        ticket.events ? `${formatShortDay(ticket.events.starts_at)} ${formatTime(ticket.events.starts_at)} h` : null,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </p>
-                    {ticket.status === 'valido' && <p className="link-hint">Ver QR →</p>}
-                  </div>
-                  <span className={`pill ${ticket.status === 'valido' ? 'pill-ok' : 'pill-muted'}`}>{TICKET_STATUS[ticket.status]}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+        {upcomingTickets.length > 0 ? (
+          <TicketList tickets={upcomingTickets} />
         ) : (
           <div className="empty">
-            <p className="empty-title">No tenés entradas ni invitaciones</p>
-            <p>Cuando compres una entrada o te regalen una invitación, tu QR para la puerta va a aparecer acá.</p>
+            <p className="empty-title">No tenés entradas para las próximas fechas</p>
+            <p>Cuando te regalen una invitación o compres una entrada, tu QR para la puerta va a aparecer acá.</p>
           </div>
+        )}
+        {pastTickets.length > 0 && (
+          <details className="past-tickets">
+            <summary>Ver anteriores ({pastTickets.length})</summary>
+            <TicketList tickets={pastTickets} />
+          </details>
         )}
       </section>
 
@@ -161,11 +172,48 @@ async function Account() {
         <div className="card">
           <ProfileForm fullName={user.fullName} phone={user.phone} email={user.email} />
         </div>
+        <Link href="/cuenta/contrasena" className="btn btn-secondary btn-block section-gap">Cambiar contraseña</Link>
       </section>
 
       <form action={logout} className="section-block">
         <button type="submit" className="btn btn-ghost btn-block">Cerrar sesión</button>
       </form>
     </div>
+  )
+}
+
+type TicketRow = {
+  id: string
+  kind: 'entrada' | 'invitacion'
+  status: 'valido' | 'usado' | 'anulado'
+  code: string
+  ticket_types: { name: string } | null
+  events: { name: string; slug: string; starts_at: string } | null
+}
+
+function TicketList({ tickets }: { tickets: TicketRow[] }) {
+  return (
+    <ul className="list">
+      {tickets.map((ticket) => (
+        <li key={ticket.id}>
+          <Link href={`/qr/${ticket.code}`} className="card row link-card">
+            <div>
+              <p className="card-title">{ticket.events?.name ?? 'Evento'}</p>
+              <p className="muted">
+                {[
+                  TICKET_KIND[ticket.kind],
+                  ticket.ticket_types?.name,
+                  ticket.events ? `${formatShortDay(ticket.events.starts_at)} ${formatTime(ticket.events.starts_at)} h` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+              {ticket.status === 'valido' && <p className="link-hint">Ver QR →</p>}
+            </div>
+            <span className={`pill ${ticket.status === 'valido' ? 'pill-ok' : 'pill-muted'}`}>{TICKET_STATUS[ticket.status]}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
   )
 }

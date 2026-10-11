@@ -51,7 +51,7 @@ async function EventInvitations({ params }: { params: PageProps<'/organizador/ev
   const when = `${formatShortDay(event.starts_at)} ${formatTime(event.starts_at)} h`
 
   return (
-    <div className="page">
+    <div className="page wide">
       <Link href="/organizador" className="back-link">← Eventos</Link>
       <p className="kicker">{when}</p>
       <h1 className="page-title">{event.name}</h1>

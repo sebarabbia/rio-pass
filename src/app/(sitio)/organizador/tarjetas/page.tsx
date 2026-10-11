@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { ActionForm } from '@/components/ActionForm'
 import { ConfirmSubmit } from '@/components/ConfirmSubmit'
 import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser } from '@/lib/auth'
@@ -40,7 +41,7 @@ async function Cards() {
     .sort((a, b) => a.name.localeCompare(b.name, 'es'))
 
   return (
-    <div className="page">
+    <div className="page wide">
       <p className="kicker">Panel de organizador</p>
       <h1 className="page-title">Tarjetas NFC</h1>
       <OrganizerNav current="tarjetas" />
@@ -59,7 +60,7 @@ async function Cards() {
             <p>Cargá la primera arriba.</p>
           </div>
         ) : (
-          <ul className="list">
+          <ul className="list admin-grid">
             {cards.map((card) => {
               const active = card.status === 'activa'
               const ownerName = card.owner?.full_name || card.owner?.email
@@ -78,7 +79,7 @@ async function Cards() {
                     </div>
                     <span className={`pill ${active ? 'pill-ok' : 'pill-bad'}`}>{active ? 'Activa' : 'Bloqueada'}</span>
                   </div>
-                  <form action={assignCard} className="assign-row">
+                  <ActionForm action={assignCard} className="assign-row" success="Asignación guardada">
                     <input type="hidden" name="cardId" value={card.id} />
                     <select name="userId" className="input" defaultValue={card.user_id ?? ''} aria-label="Asignar a">
                       <option value="">Sin asignar</option>
@@ -90,19 +91,19 @@ async function Cards() {
                       ))}
                     </select>
                     <button type="submit" className="btn btn-secondary btn-sm">Asignar</button>
-                  </form>
+                  </ActionForm>
                   <div className="invitation-actions">
-                    <form action={setCardStatus}>
+                    <ActionForm action={setCardStatus} success={active ? 'Tarjeta bloqueada' : 'Tarjeta desbloqueada'}>
                       <input type="hidden" name="cardId" value={card.id} />
                       <input type="hidden" name="status" value={active ? 'bloqueada' : 'activa'} />
                       <button type="submit" className="btn btn-secondary btn-sm">{active ? 'Bloquear' : 'Desbloquear'}</button>
-                    </form>
-                    <form action={deleteCard}>
+                    </ActionForm>
+                    <ActionForm action={deleteCard} success="Tarjeta eliminada">
                       <input type="hidden" name="cardId" value={card.id} />
                       <ConfirmSubmit message={`¿Eliminar la tarjeta ${card.uid}?`} className="btn btn-danger btn-sm">
                         Eliminar
                       </ConfirmSubmit>
-                    </form>
+                    </ActionForm>
                   </div>
                 </li>
               )

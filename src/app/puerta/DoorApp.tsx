@@ -6,8 +6,9 @@ import { Logo } from '@/components/Logo'
 import { formatShortDay, formatTime } from '@/lib/format'
 import { nfcErrorMessage, nfcSupported, startNfcScan } from '@/lib/nfc'
 import { createClient } from '@/lib/supabase/client'
+import { GuestSearch } from './GuestSearch'
 
-type DoorEvent = { id: string; name: string; starts_at: string; venue: string }
+type DoorEvent = { id: string; name: string; starts_at: string; ends_at: string | null; venue: string }
 type ScanMethod = 'qr' | 'nfc' | 'manual'
 type DoorResult = {
   result: 'permitido' | 'rechazado'
@@ -73,6 +74,22 @@ function cameraErrorMessage(err: unknown) {
 }
 
 const noopSubscribe = () => () => {}
+
+// Reloj de minutos (para avisar si la fecha elegida no es la de hoy) sin Date.now() en el render.
+const subscribeMinute = (cb: () => void) => {
+  const id = window.setInterval(cb, 30_000)
+  return () => window.clearInterval(id)
+}
+const getMinute = () => Math.floor(Date.now() / 60_000)
+const getServerMinute = () => 0
+
+const HOUR = 60 * 60 * 1000
+/** La fecha "es esta noche" desde 6 h antes de abrir hasta 2 h después del cierre (o 12 h si no tiene cierre). */
+function isTonight(event: DoorEvent, now: number) {
+  const start = new Date(event.starts_at).getTime()
+  const end = event.ends_at ? new Date(event.ends_at).getTime() : start + 12 * HOUR
+  return now >= start - 6 * HOUR && now <= end + 2 * HOUR
+}
 function readSavedEvent() {
   try {
     return localStorage.getItem(EVENT_KEY)
@@ -109,6 +126,8 @@ export function DoorApp({ events, staffName, isOrganizer }: { events: DoorEvent[
   const audioRef = useRef<AudioContext | null>(null)
 
   const event = events.find((e) => e.id === eventId) ?? null
+  const minute = useSyncExternalStore(subscribeMinute, getMinute, getServerMinute)
+  const wrongNight = !!event && minute > 0 && !isTonight(event, minute * 60_000)
 
   // Contador de ingresos de la fecha elegida.
   useEffect(() => {
@@ -381,6 +400,12 @@ export function DoorApp({ events, staffName, isOrganizer }: { events: DoorEvent[
         </select>
       </label>
 
+      {wrongNight && event && (
+        <p className="door-warning" role="alert">
+          Ojo: elegiste {formatShortDay(event.starts_at)} · {event.name}, que no es la fecha de hoy. Si los QR dan “Otra fecha”, cambiala arriba.
+        </p>
+      )}
+
       <div className="door-count" aria-live="polite">
         <span className="door-count-value">{count ?? '–'}</span>
         <span className="door-count-label">ingresos{event ? ` · ${event.name}` : ''}</span>
@@ -404,6 +429,8 @@ export function DoorApp({ events, staffName, isOrganizer }: { events: DoorEvent[
       </div>
       {nfcOn && <p className="door-hint">Apoyá la tarjeta en el dorso del celular. Queda escuchando: una tras otra.</p>}
       {notice && <p className="door-notice" role="status">{notice}</p>}
+
+      <GuestSearch key={eventId} eventId={eventId} onAdmit={(code) => validate('manual', code)} />
 
       <details className="card door-manual">
         <summary>Ingresar código a mano</summary>

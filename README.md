@@ -29,6 +29,8 @@ src/app/
     qr/[code]/               Pantalla del QR que recibe el invitado (link de WhatsApp)
     ranking/                 Ranking de la temporada (top 10 con premio, tu puesto)
     registro/, ingresar/     Alta e inicio de sesión (email + contraseña)
+    recuperar/               "¿Olvidaste tu contraseña?" (manda el mail)
+    cuenta/contrasena/       Elegir contraseña nueva (desde el mail o desde Mi cuenta)
     cuenta/                  Perfil: datos, Mis QR, Mis puntos (y Mis tarjetas si tiene)
     rrpp/                    Panel RRPP: fechas, cupo, generar y compartir QR sin cargo
     organizador/             Panel: eventos, invitaciones, usuarios y roles, tarjetas NFC,
@@ -62,6 +64,7 @@ Las migraciones en `supabase/migrations/` ya están aplicadas al proyecto `rio-p
   - `season_ranking`: ranking de la temporada (solo nombre corto y total; la liga RRPP solo para RRPP y organizadores).
   - `my_ranking`: puntos, puesto y distancia al top 10 del usuario logueado.
   - `admin_season_ranking`: ranking con nombre completo y contacto, solo organizador.
+  - `search_door_guests`: busca QR de un evento por nombre del titular, solo acreditador u organizador.
 - Auxiliares en el esquema `private` (no expuesto por la API).
 
 ## Invitaciones QR (Etapa 2)
@@ -91,10 +94,15 @@ Cada fecha tiene un cupo de QR por RRPP (editable en el evento); anular un QR si
 
 ## Configuración de Auth (una vez, en el dashboard de Supabase)
 
-1. **Registro sin fricción:** Authentication → Sign In / Providers → Email → desactivar *Confirm email*. (Si queda activo, el mail de Supabase tiene límites muy bajos; para producción configurar SMTP propio, p. ej. Resend.)
-2. **URLs:** Authentication → URL Configuration → Site URL = `http://localhost:3000` (en producción, la URL de Vercel) y agregar `<url>/auth/confirm` a Redirect URLs.
-3. **Teléfono:** el login por SMS requiere un proveedor pago (Twilio, etc.). Por ahora el celular es un dato del perfil y el login es por email.
-4. **Opcional:** activar *Leaked password protection* (Authentication → Policies) si el plan lo permite.
+1. **Registro sin fricción:** Authentication → Sign In / Providers → Email → desactivar *Confirm email*.
+2. **URLs:** Authentication → URL Configuration → Site URL = `https://rio-pass.vercel.app` y en Redirect URLs agregar `https://rio-pass.vercel.app/**` y `http://localhost:3000/**` (los links de los mails vuelven a `/auth/confirm?next=…`).
+3. **Mails (obligatorio para "¿Olvidaste tu contraseña?"):** el servidor de mail que trae Supabase solo manda a los miembros del equipo del proyecto y unos pocos por hora, así que a los clientes no les llega. Configurar SMTP propio, por ejemplo con [Resend](https://resend.com) (gratis hasta 3000 mails/mes):
+   1. Crear la cuenta en Resend, verificar un dominio (o usar el de prueba) y crear una API key.
+   2. Supabase → Authentication → Emails → SMTP Settings → *Enable custom SMTP*: host `smtp.resend.com`, puerto `465`, usuario `resend`, contraseña = la API key, remitente `Rio <no-responder@tu-dominio>`.
+   3. En Authentication → Rate Limits subir el límite de mails por hora (por ejemplo a 100).
+   4. Opcional: traducir la plantilla *Reset password* (Authentication → Emails → Templates).
+4. **Teléfono:** el login por SMS requiere un proveedor pago (Twilio, etc.). Por ahora el celular es un dato del perfil y el login es por email.
+5. **Opcional:** activar *Leaked password protection* (Authentication → Policies) si el plan lo permite.
 
 ## Primer organizador
 
@@ -110,7 +118,14 @@ Volvé a entrar: aparece **Panel** en el menú. Desde ahí se asignan los demás
 
 ## Fechas de ejemplo
 
-**Panel → Fechas de ejemplo** carga 3 fechas publicadas con flyers reales (Apertura, Rio Tropical, Old School) en los viernes del verano 2027, más la temporada "Verano 2027". Se suben con la sesión del organizador (mismas reglas que una carga a mano) y se borran con un botón sin tocar los eventos reales.
+**/organizador/demo** (ya no tiene botón en el panel) carga 3 fechas publicadas con flyers reales (Apertura, Rio Tropical, Old School) en los viernes del verano 2027, más la temporada "Verano 2027". Se suben con la sesión del organizador (mismas reglas que una carga a mano) y se borran con un botón sin tocar los eventos reales.
+
+## Detalles de UX
+
+- **Vista previa en WhatsApp:** cada link (home, evento, QR) tiene una imagen 1200×630 generada en el servidor (`opengraph-image.tsx` + `lib/og.tsx`) con el flyer pasado a JPEG (los flyers se guardan en WebP y el generador no los lee).
+- **App instalable:** `app/manifest.ts` (Rio Pass) y `public/puerta.webmanifest` (Rio Puerta, abre directo en `/puerta`). En Android: menú de Chrome → *Agregar a pantalla de inicio*; en iPhone: Compartir → *Agregar a inicio*.
+- **Puerta:** buscar invitados por nombre (`search_door_guests`, sin acentos ni mayúsculas) para dar ingreso sin el QR, y aviso si la fecha elegida no es la de hoy.
+- **Avisos "✓ Listo"** en las acciones del panel (`components/ActionForm` + `components/Toast`).
 
 ## Deploy (Vercel)
 

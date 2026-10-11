@@ -1,15 +1,29 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import { Suspense } from 'react'
+import { cache, Suspense } from 'react'
 import { PageLoading } from '@/components/PageStates'
 import { formatLongDay, formatTime } from '@/lib/format'
 import { getOrigin, qrSvg, ticketUrl } from '@/lib/site'
 import { createPublicClient } from '@/lib/supabase/public'
 
-export const metadata: Metadata = {
-  title: 'Tu QR',
-  robots: { index: false, follow: false },
+const CODE_RE = /^[A-Za-z0-9_-]{16,64}$/
+
+// Se usa en la metadata (vista previa de WhatsApp) y en la página: una sola consulta por request.
+const getTicket = cache(async (code: string) => {
+  if (!CODE_RE.test(code)) return null
+  const { data } = await createPublicClient().rpc('get_ticket_by_code', { _code: code })
+  return data?.[0] ?? null
+})
+
+export async function generateMetadata({ params }: PageProps<'/qr/[code]'>): Promise<Metadata> {
+  const { code } = await params
+  const ticket = await getTicket(code)
+  const robots = { index: false, follow: false }
+  if (!ticket) return { title: 'QR no encontrado', robots }
+  const kind = ticket.kind === 'invitacion' ? 'Invitación' : 'Entrada'
+  const title = `${kind} · ${ticket.event_name}`
+  const description = `${ticket.holder_name ? `${ticket.holder_name}: ` : ''}${formatLongDay(ticket.event_starts_at)} · ${formatTime(ticket.event_starts_at)} h · ${ticket.event_venue}. Mostrá tu QR en la puerta.`
+  return { title, description, robots, openGraph: { title, description }, twitter: { title, description } }
 }
 
 export default function TicketPage({ params }: PageProps<'/qr/[code]'>) {
@@ -27,11 +41,8 @@ const STATUS_BANNER = {
 
 async function Ticket({ params }: { params: PageProps<'/qr/[code]'>['params'] }) {
   const { code } = await params
-  if (!/^[A-Za-z0-9_-]{16,64}$/.test(code)) notFound()
-
-  const { data } = await createPublicClient().rpc('get_ticket_by_code', { _code: code })
-  const ticket = data?.[0]
-  if (!ticket) notFound()
+  const ticket = await getTicket(code)
+  if (!ticket) return <TicketMissing />
 
   const origin = await getOrigin()
   const svg = await qrSvg(ticketUrl(origin, code))
@@ -60,9 +71,10 @@ async function Ticket({ params }: { params: PageProps<'/qr/[code]'>['params'] })
       </div>
 
       {valid && (
-        <p className="muted center-text">
-          Mostrá este QR en la puerta. Subí el brillo de la pantalla para que se lea rápido.
-        </p>
+        <div className="ticket-tips">
+          <p><strong>Sacale una captura ahora.</strong> En la playa a veces no hay señal y la captura sirve igual.</p>
+          <p className="muted">En la puerta, subí el brillo de la pantalla para que se lea rápido.</p>
+        </div>
       )}
 
       <Link href={`/eventos/${ticket.event_slug}`} className="btn btn-secondary btn-block">
@@ -72,6 +84,18 @@ async function Ticket({ params }: { params: PageProps<'/qr/[code]'>['params'] })
         Con cuenta en Rio Pass sumás puntos cada noche que venís y entrás al <Link href="/ranking">ranking</Link>.{' '}
         <Link href="/registro">Creá tu cuenta</Link>.
       </p>
+    </div>
+  )
+}
+
+/** Link roto o incompleto (pasa al copiarlo a mano): se explica qué hacer en vez de un 404 genérico. */
+function TicketMissing() {
+  return (
+    <div className="page center">
+      <p className="kicker">QR no encontrado</p>
+      <h1 className="page-title">Este QR no existe</h1>
+      <p className="muted">Puede que el link esté incompleto (pasa al copiarlo a mano). Pedile a quien te lo mandó que te lo reenvíe.</p>
+      <Link href="/" className="btn btn-primary">Ver próximas fechas</Link>
     </div>
   )
 }

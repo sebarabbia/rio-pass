@@ -55,7 +55,7 @@ async function Ranking({ searchParams }: { searchParams: PageProps<'/ranking'>['
           <p>Ingresá para ver tu puesto y tus puntos.</p>
           <div className="my-rank-actions">
             <Link href="/ingresar?next=%2Franking" className="btn btn-primary btn-sm">Ingresar</Link>
-            <Link href="/registro" className="btn btn-secondary btn-sm">Crear cuenta</Link>
+            <Link href="/registro?next=%2Franking" className="btn btn-secondary btn-sm">Crear cuenta</Link>
           </div>
         </div>
       ) : (

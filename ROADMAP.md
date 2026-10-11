@@ -24,6 +24,9 @@ Esquema completo con RLS, registro e inicio de sesión, web pública de eventos,
 - Panel → Puntos: ranking completo y carga de premios/ajustes por persona.
 - Pendiente para cuando termine la temporada: cerrar la temporada y registrar los premios del top 10 (hoy se ve el top 10 en el panel y se entregan a mano).
 
+## Auditoría UX/UI (hecha)
+Recuperar y cambiar contraseña, vista previa con flyer en los links de WhatsApp, consejo de sacar captura al QR, home más compacta con botones según la sesión, "Tu próxima entrada" en Mi cuenta, RRPP con compartir nativo, panel de eventos con próximas/anteriores y números por noche, búsqueda por nombre y aviso de fecha en la puerta, compartir y "Cómo llegar" en cada evento, avisos "Listo" en el panel, textos de 12 px mínimo, panel más ancho en compu y app instalable (sitio y puerta).
+
 ## Etapa 5: Tarjetas NTAG 424 DNA
 - Programar las tarjetas con SUN/SDM: al apoyarlas abren `https://…/t?picc=…&cmac=…`.
 - Verificar del lado del servidor (Route Handler o Edge Function): descifrar el UID y el contador, validar el CMAC con claves diversificadas a partir de una clave maestra guardada como secreto (nunca en la base) y rechazar contadores repetidos (`last_counter`).

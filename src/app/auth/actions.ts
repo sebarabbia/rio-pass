@@ -29,6 +29,7 @@ export async function login(_prev: AuthFormState, formData: FormData): Promise<A
 }
 
 export async function signup(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  const next = safeNext(formData.get('next'))
   const fullName = String(formData.get('fullName') ?? '').trim().replace(/\s+/g, ' ')
   const email = String(formData.get('email') ?? '').trim().toLowerCase()
   const phone = String(formData.get('phone') ?? '').trim()
@@ -48,17 +49,57 @@ export async function signup(_prev: AuthFormState, formData: FormData): Promise<
     options: {
       // El trigger de la base copia estos datos al perfil y le da el rol "cliente".
       data: { full_name: fullName, phone: phone || null },
-      emailRedirectTo: `${origin}/auth/confirm?next=/cuenta`,
+      emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(next)}`,
     },
   })
   if (error) return { error: authErrorMessage(error), fields }
 
   // Si el proyecto no exige confirmar el email, la sesión ya está abierta.
-  if (data.session) redirect('/cuenta')
+  if (data.session) redirect(next)
 
   return {
     message: `¡Listo! Te mandamos un mail a ${email} para confirmar tu cuenta. Abrí el link desde este mismo dispositivo.`,
   }
+}
+
+/**
+ * Manda el mail para elegir una contraseña nueva. Siempre responde lo mismo,
+ * exista o no la cuenta, para no revelar qué emails están registrados.
+ */
+export async function requestPasswordReset(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  const email = String(formData.get('email') ?? '').trim().toLowerCase()
+  if (!EMAIL_RE.test(email)) return { error: 'Escribí el email con el que te registraste.', fields: { email } }
+
+  const origin = (await headers()).get('origin') ?? 'http://localhost:3000'
+  const supabase = await createClient()
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/confirm?next=${encodeURIComponent('/cuenta/contrasena')}`,
+  })
+  if (error && (error.code === 'over_email_send_rate_limit' || error.code === 'over_request_rate_limit')) {
+    return { error: authErrorMessage(error), fields: { email } }
+  }
+  return {
+    message: `Si hay una cuenta con ${email}, te llega un mail con un link para elegir una contraseña nueva. Abrilo desde este mismo celular. Si no lo ves, revisá la carpeta de spam.`,
+  }
+}
+
+/** Cambia la contraseña del usuario logueado (también al volver del mail de recuperación). */
+export async function updatePassword(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  const password = String(formData.get('password') ?? '')
+  const confirm = String(formData.get('confirm') ?? '')
+  if (password.length < 8) return { error: 'La contraseña tiene que tener al menos 8 caracteres.' }
+  if (password !== confirm) return { error: 'Las dos contraseñas no coinciden.' }
+
+  const supabase = await createClient()
+  const { data } = await supabase.auth.getClaims()
+  if (!data?.claims) redirect('/ingresar?next=/cuenta/contrasena')
+
+  const { error } = await supabase.auth.updateUser({ password })
+  if (error) {
+    if (error.code === 'same_password') return { error: 'Es la misma contraseña que ya tenías. Elegí otra.' }
+    return { error: authErrorMessage(error) }
+  }
+  return { message: 'Listo, tu contraseña nueva ya funciona.' }
 }
 
 export async function logout() {

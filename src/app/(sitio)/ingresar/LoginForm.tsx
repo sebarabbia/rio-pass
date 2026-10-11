@@ -1,8 +1,10 @@
 'use client'
 
+import Link from 'next/link'
 import { useActionState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { login, type AuthFormState } from '@/app/auth/actions'
+import { PasswordInput } from '@/components/PasswordInput'
 import { SubmitButton } from '@/components/SubmitButton'
 
 export function LoginForm() {
@@ -15,7 +17,7 @@ export function LoginForm() {
       <input type="hidden" name="next" value={params.get('next') ?? '/cuenta'} />
       {linkError && !state.error && (
         <p className="form-error" role="alert">
-          El link de confirmación venció o ya se usó. Ingresá con tu email y contraseña.
+          El link venció o ya se usó. Ingresá con tu email y contraseña, o pedí uno nuevo en “¿Olvidaste tu contraseña?”.
         </p>
       )}
       <div className="field">
@@ -32,8 +34,11 @@ export function LoginForm() {
         />
       </div>
       <div className="field">
-        <label htmlFor="password">Contraseña</label>
-        <input id="password" name="password" type="password" className="input" autoComplete="current-password" required />
+        <div className="label-row">
+          <label htmlFor="password">Contraseña</label>
+          <Link href="/recuperar" className="label-link">¿Olvidaste tu contraseña?</Link>
+        </div>
+        <PasswordInput id="password" autoComplete="current-password" />
       </div>
       {state.error && <p className="form-error" role="alert">{state.error}</p>}
       <SubmitButton pendingText="Ingresando…">Ingresar</SubmitButton>

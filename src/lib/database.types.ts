@@ -854,6 +854,18 @@ export type Database = {
       }
       door_stats: { Args: { _event_id: string }; Returns: Json }
       my_ranking: { Args: { _season_id?: string }; Returns: Json }
+      search_door_guests: {
+        Args: { _event_id: string; _query: string }
+        Returns: {
+          code: string
+          holder: string | null
+          issuer: string | null
+          kind: Database["public"]["Enums"]["ticket_kind"]
+          sector: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          used_at: string | null
+        }[]
+      }
       season_ranking: {
         Args: { _league?: string; _limit?: number; _season_id?: string }
         Returns: {

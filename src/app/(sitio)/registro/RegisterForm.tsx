@@ -1,11 +1,14 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { signup, type AuthFormState } from '@/app/auth/actions'
+import { PasswordInput } from '@/components/PasswordInput'
 import { SubmitButton } from '@/components/SubmitButton'
 
 export function RegisterForm() {
   const [state, formAction] = useActionState<AuthFormState, FormData>(signup, {})
+  const next = useSearchParams().get('next') ?? '/cuenta'
 
   if (state.message) {
     return (
@@ -18,6 +21,7 @@ export function RegisterForm() {
 
   return (
     <form action={formAction} className="card form-card" noValidate>
+      <input type="hidden" name="next" value={next} />
       <div className="field">
         <label htmlFor="fullName">Nombre y apellido</label>
         <input
@@ -62,16 +66,8 @@ export function RegisterForm() {
       </div>
       <div className="field">
         <label htmlFor="password">Contraseña</label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          className="input"
-          autoComplete="new-password"
-          minLength={8}
-          required
-        />
-        <p className="hint">Mínimo 8 caracteres.</p>
+        <PasswordInput id="password" autoComplete="new-password" minLength={8} describedBy="password-hint" />
+        <p id="password-hint" className="hint">Mínimo 8 caracteres.</p>
       </div>
       {state.error && <p className="form-error" role="alert">{state.error}</p>}
       <SubmitButton pendingText="Creando cuenta…">Crear cuenta</SubmitButton>

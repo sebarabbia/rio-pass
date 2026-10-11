@@ -11,6 +11,9 @@ import { DoorApp } from './DoorApp'
 export const metadata: Metadata = {
   title: 'Puerta',
   robots: { index: false, follow: false },
+  // Instalable aparte: desde el celular de la puerta abre directo en /puerta.
+  manifest: '/puerta.webmanifest',
+  appleWebApp: { capable: true, title: 'Rio Puerta', statusBarStyle: 'black-translucent' },
 }
 
 export default function DoorPage() {
@@ -35,7 +38,7 @@ async function Door() {
   const supabase = await createClient()
   const { data: events } = await supabase
     .from('events')
-    .select('id, name, starts_at, venue')
+    .select('id, name, starts_at, ends_at, venue')
     .eq('status', 'publicado')
     .gte('starts_at', upcomingSince())
     .order('starts_at', { ascending: true })

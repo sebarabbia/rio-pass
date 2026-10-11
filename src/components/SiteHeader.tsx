@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
+import { HeaderLoginButton } from '@/components/HeaderLoginButton'
 import { Logo } from '@/components/Logo'
 import { getCurrentUser, hasRole } from '@/lib/auth'
 
@@ -25,13 +26,7 @@ export function SiteHeader() {
 
 async function HeaderAuth() {
   const user = await getCurrentUser()
-  if (!user) {
-    return (
-      <Link href="/ingresar" className="btn btn-primary btn-sm">
-        Ingresar
-      </Link>
-    )
-  }
+  if (!user) return <HeaderLoginButton />
   // Un solo acceso de staff (el del rol principal) para que entre en el celular;
   // los demás están en "Mi cuenta". Un cliente no ve ninguno.
   const staffLink = hasRole(user, 'organizador')
