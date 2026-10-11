@@ -3,7 +3,9 @@ import Link from 'next/link'
 const ITEMS = [
   { key: 'eventos', href: '/organizador', label: 'Eventos' },
   { key: 'usuarios', href: '/organizador/usuarios', label: 'Usuarios' },
+  { key: 'tarjetas', href: '/organizador/tarjetas', label: 'Tarjetas' },
   { key: 'temporadas', href: '/organizador/temporadas', label: 'Temporadas' },
+  { key: 'puerta', href: '/puerta', label: 'Puerta ↗' },
 ] as const
 
 export function OrganizerNav({ current }: { current: (typeof ITEMS)[number]['key'] }) {

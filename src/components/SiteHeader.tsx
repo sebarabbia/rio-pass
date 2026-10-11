@@ -33,13 +33,19 @@ async function HeaderAuth() {
       </Link>
     )
   }
+  // Un solo acceso de staff (el del rol principal) para que entre en el celular;
+  // los demás están en "Mi cuenta". Un cliente no ve ninguno.
+  const staffLink = hasRole(user, 'organizador')
+    ? { href: '/organizador', label: 'Panel' }
+    : hasRole(user, 'acreditador')
+      ? { href: '/puerta', label: 'Puerta' }
+      : hasRole(user, 'rrpp')
+        ? { href: '/rrpp', label: 'RRPP' }
+        : null
   return (
     <>
-      {hasRole(user, 'organizador') && (
-        <Link href="/organizador" className="nav-link">Panel</Link>
-      )}
-      {hasRole(user, 'rrpp') && (
-        <Link href="/rrpp" className="nav-link">RRPP</Link>
+      {staffLink && (
+        <Link href={staffLink.href} className="nav-link">{staffLink.label}</Link>
       )}
       <Link href="/cuenta" className="btn btn-secondary btn-sm">
         Mi cuenta

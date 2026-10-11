@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Suspense } from 'react'
 import { logout } from '@/app/auth/actions'
 import { PageLoading } from '@/components/PageStates'
-import { hasRole, requireUser, ROLE_LABELS } from '@/lib/auth'
+import { hasRole, requireUser } from '@/lib/auth'
 import { firstName, formatShortDay, formatTime } from '@/lib/format'
 import { createClient } from '@/lib/supabase/server'
 import { ProfileForm } from './ProfileForm'
@@ -51,22 +51,21 @@ async function Account() {
     <div className="page">
       <p className="kicker">Mi cuenta</p>
       <h1 className="page-title">{name ? `Hola, ${name}` : 'Hola'}</h1>
-      <ul className="chips" aria-label="Tus roles">
-        {user.roles.map((role) => (
-          <li key={role} className="chip">{ROLE_LABELS[role]}</li>
-        ))}
-      </ul>
+      {/* Accesos de staff: solo los ve quien tiene ese rol. Un cliente no ve nada de esto. */}
       {hasRole(user, 'organizador') && (
         <Link href="/organizador" className="btn btn-primary btn-block">Ir al panel de organizador</Link>
       )}
+      {(hasRole(user, 'acreditador') || hasRole(user, 'organizador')) && (
+        <Link href="/puerta" className="btn btn-secondary btn-block">Abrir la puerta (validar ingresos)</Link>
+      )}
       {hasRole(user, 'rrpp') && (
-        <Link href="/rrpp" className="btn btn-secondary btn-block">Panel RRPP: generar invitaciones</Link>
+        <Link href="/rrpp" className="btn btn-secondary btn-block">Generar invitaciones</Link>
       )}
 
-      {/* ---------------- Mis tarjetas ---------------- */}
-      <section className="section-block" aria-labelledby="tarjetas">
-        <h2 id="tarjetas" className="block-title">Mis tarjetas</h2>
-        {cards && cards.length > 0 ? (
+      {/* ---------------- Mis tarjetas (solo si tiene) ---------------- */}
+      {cards && cards.length > 0 && (
+        <section className="section-block" aria-labelledby="tarjetas">
+          <h2 id="tarjetas" className="block-title">Mis tarjetas</h2>
           <ul className="list">
             {cards.map((card) => (
               <li key={card.id} className="card row">
@@ -80,13 +79,8 @@ async function Account() {
               </li>
             ))}
           </ul>
-        ) : (
-          <div className="empty">
-            <p className="empty-title">Todavía no tenés tarjeta</p>
-            <p>Las tarjetas Rio Pass se entregan a los RRPP de la temporada. Cuando te asignen una, la vas a ver acá.</p>
-          </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* ---------------- Mis QR ---------------- */}
       <section className="section-block" aria-labelledby="qr">

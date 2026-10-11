@@ -18,16 +18,20 @@ src/proxy.ts                 Refresca la sesión y protege /cuenta, /organizador
 src/lib/                     Clientes Supabase, auth (usuario + roles), eventos, fechas, QR, WhatsApp
 src/components/              Logo, header, tarjetas, formularios e invitaciones (compartidos)
 src/demo/                    Fechas de ejemplo (flyers de la temporada pasada)
+src/actions/                 Server Actions compartidas (invitaciones)
 src/app/
-  page.tsx                   Home pública con próximas fechas
-  eventos/[slug]/            Detalle público (lugar, sectores, cómo entrar)
-  qr/[code]/                 Pantalla del QR que recibe el invitado (link de WhatsApp)
-  registro/, ingresar/       Alta e inicio de sesión (email + contraseña)
+  layout.tsx                 Documento, fuentes y estilos (sin menú)
+  puerta/                    App de la puerta a pantalla completa (acreditador)
   auth/confirm/              Destino del link de confirmación por mail
-  cuenta/                    Perfil: datos, Mis tarjetas, Mis QR, Mis puntos
-  rrpp/                      Panel RRPP: fechas, cupo, generar y compartir QR sin cargo
-  organizador/               Panel: eventos (sectores, cupo RRPP, flyer), invitaciones por evento,
-                             usuarios y roles, temporadas, fechas de ejemplo
+  (sitio)/                   Todo lo que lleva menú y pie:
+    page.tsx                 Home pública con próximas fechas
+    eventos/[slug]/          Detalle público (lugar, sectores, cómo entrar)
+    qr/[code]/               Pantalla del QR que recibe el invitado (link de WhatsApp)
+    registro/, ingresar/     Alta e inicio de sesión (email + contraseña)
+    cuenta/                  Perfil: datos, Mis QR, Mis puntos (y Mis tarjetas si tiene)
+    rrpp/                    Panel RRPP: fechas, cupo, generar y compartir QR sin cargo
+    organizador/             Panel: eventos, invitaciones, usuarios y roles, tarjetas NFC,
+                             temporadas, fechas de ejemplo
 ```
 
 ## Correrlo localmente
@@ -52,6 +56,8 @@ Las migraciones en `supabase/migrations/` ya están aplicadas al proyecto `rio-p
   - `issue_invitation`: emite un QR. Organizador sin límite; RRPP solo en fechas publicadas y dentro de su cupo (`events.rrpp_invite_quota`), de forma atómica.
   - `void_ticket`: anula un QR sin usar (el RRPP solo los suyos).
   - `get_ticket_by_code`: datos públicos de un QR a partir de su código (sin email ni teléfono).
+  - `validate_access`: valida un ingreso en la puerta (QR, código o tarjeta NFC) de forma atómica.
+  - `door_stats`: contador de ingresos de la noche.
 - Auxiliares en el esquema `private` (no expuesto por la API).
 
 ## Invitaciones QR (Etapa 2)
@@ -62,6 +68,13 @@ Las migraciones en `supabase/migrations/` ya están aplicadas al proyecto `rio-p
 4. El QR codifica ese mismo link: la app de puerta (Etapa 3) va a leer el código de ahí.
 
 Cada fecha tiene un cupo de QR por RRPP (editable en el evento); anular un QR sin usar libera el lugar. El organizador puede emitir y ver todas las invitaciones de un evento en **Panel → Eventos → Invitaciones**.
+
+## Puerta (Etapa 3)
+
+1. El organizador asigna el rol **Acreditador** al personal de puerta (Panel → Usuarios) y carga las tarjetas de los RRPP (Panel → Tarjetas: se pueden leer apoyándolas en un Android con Chrome).
+2. En la puerta se abre **/puerta** desde el celular, se elige la fecha y se toca **Escanear QR** (cámara) o **Leer tarjetas NFC** (solo Chrome en Android). También se puede tipear el código.
+3. Cada lectura muestra pantalla completa verde (con nombre y sector) o roja con el motivo: ya usado (y a qué hora), otra fecha, anulado, QR no válido, tarjeta bloqueada / sin asignar / no reconocida, o ya ingresó esta noche.
+4. Los QR son de un solo uso. Las tarjetas entran una vez por noche (anti-passback). Cada ingreso queda registrado como asistencia, que es la base de los puntos (Etapa 4).
 
 ## Configuración de Auth (una vez, en el dashboard de Supabase)
 

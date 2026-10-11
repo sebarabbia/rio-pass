@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Suspense } from 'react'
-import { NoAccess, PageLoading } from '@/components/PageStates'
+import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser } from '@/lib/auth'
 import { flyerUrl, upcomingSince } from '@/lib/events'
 import { firstName, formatShortDay, formatTime } from '@/lib/format'
@@ -19,7 +20,7 @@ export default function RrppPage() {
 
 async function RrppHome() {
   const user = await requireUser('/rrpp')
-  if (!hasRole(user, 'rrpp')) return <NoAccess role="RRPP" />
+  if (!hasRole(user, 'rrpp')) notFound()
 
   const supabase = await createClient()
   const { data: events } = await supabase

@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { InvitationForm } from '@/components/InvitationForm'
 import { InvitationList, type InvitationRow } from '@/components/InvitationList'
-import { NoAccess, PageLoading } from '@/components/PageStates'
+import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser } from '@/lib/auth'
 import { formatShortDay, formatTime } from '@/lib/format'
 import { getOrigin } from '@/lib/site'
@@ -23,7 +23,7 @@ export default function EventInvitationsPage({ params }: PageProps<'/organizador
 async function EventInvitations({ params }: { params: PageProps<'/organizador/eventos/[id]/invitaciones'>['params'] }) {
   const { id } = await params
   const user = await requireUser(`/organizador/eventos/${id}/invitaciones`)
-  if (!hasRole(user, 'organizador')) return <NoAccess />
+  if (!hasRole(user, 'organizador')) notFound()
 
   const supabase = await createClient()
   const [{ data: event }, { data: tickets }, origin] = await Promise.all([

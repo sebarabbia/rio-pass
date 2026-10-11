@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
-import { NoAccess, PageLoading } from '@/components/PageStates'
+import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser, ROLE_LABELS, type AppRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { OrganizerNav } from '../OrganizerNav'
@@ -20,7 +21,7 @@ export default function UsersPage({ searchParams }: PageProps<'/organizador/usua
 
 async function Users({ searchParams }: { searchParams: PageProps<'/organizador/usuarios'>['searchParams'] }) {
   const me = await requireUser('/organizador/usuarios')
-  if (!hasRole(me, 'organizador')) return <NoAccess />
+  if (!hasRole(me, 'organizador')) notFound()
 
   const params = await searchParams
   const rawQuery = typeof params.q === 'string' ? params.q : ''

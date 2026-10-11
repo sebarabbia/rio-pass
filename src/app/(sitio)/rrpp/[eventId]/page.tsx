@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { InvitationForm } from '@/components/InvitationForm'
 import { InvitationList, type InvitationRow } from '@/components/InvitationList'
-import { NoAccess, PageLoading } from '@/components/PageStates'
+import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser } from '@/lib/auth'
 import { formatShortDay, formatTime } from '@/lib/format'
 import { getOrigin } from '@/lib/site'
@@ -23,7 +23,7 @@ export default function RrppEventPage({ params }: PageProps<'/rrpp/[eventId]'>) 
 async function RrppEvent({ params }: { params: PageProps<'/rrpp/[eventId]'>['params'] }) {
   const { eventId } = await params
   const user = await requireUser(`/rrpp/${eventId}`)
-  if (!hasRole(user, 'rrpp')) return <NoAccess role="RRPP" />
+  if (!hasRole(user, 'rrpp')) notFound()
 
   const supabase = await createClient()
   const [{ data: event }, { data: tickets }, origin] = await Promise.all([

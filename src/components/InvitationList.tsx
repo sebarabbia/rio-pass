@@ -1,4 +1,4 @@
-import { voidInvitation } from '@/app/invitaciones/actions'
+import { voidInvitation } from '@/actions/invitations'
 import { ConfirmSubmit } from '@/components/ConfirmSubmit'
 import { ShareInvitation } from '@/components/ShareInvitation'
 

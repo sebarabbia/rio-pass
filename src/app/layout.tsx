@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from 'next'
 import { Cormorant_Garamond } from 'next/font/google'
-import Link from 'next/link'
-import { SiteHeader } from '@/components/SiteHeader'
 import './globals.css'
 
 const serif = Cormorant_Garamond({
@@ -23,19 +21,12 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 }
 
+// Layout raíz: solo documento, fuentes y estilos. El sitio (con menú y pie) está en
+// app/(sitio)/layout.tsx; la pantalla de la puerta (app/puerta) ocupa todo el celular.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es-AR" className={serif.variable}>
-      <body>
-        <SiteHeader />
-        <main className="main">{children}</main>
-        <footer className="footer">
-          <p>Rio · Paraná, Entre Ríos</p>
-          <p>
-            <Link href="/">Eventos</Link> · <Link href="/cuenta">Mi cuenta</Link>
-          </p>
-        </footer>
-      </body>
+      <body>{children}</body>
     </html>
   )
 }

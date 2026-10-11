@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
-import { NoAccess, PageLoading } from '@/components/PageStates'
+import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { EventForm } from '../../EventForm'
@@ -17,7 +18,7 @@ export default function NewEventPage() {
 
 async function NewEvent() {
   const user = await requireUser('/organizador/eventos/nuevo')
-  if (!hasRole(user, 'organizador')) return <NoAccess />
+  if (!hasRole(user, 'organizador')) notFound()
 
   const supabase = await createClient()
   const { data: seasons } = await supabase.from('seasons').select('id, name, is_current').order('starts_on', { ascending: false })

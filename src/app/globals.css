@@ -360,3 +360,85 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .ticket-qr svg { width: 100%; height: 100%; display: block; }
 .ticket-holder { font-family: var(--serif); font-size: 1.9rem; font-weight: 700; line-height: 1.1; margin-top: 6px; overflow-wrap: anywhere; }
 .ticket-sector { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #4c5d63; }
+
+/* ================================================================ Etapa 3: tarjetas y puerta */
+.assign-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+.assign-row .input { min-height: 44px; font-size: 0.95rem; }
+.nfc-card { display: grid; gap: 12px; }
+.btn.is-waiting { border-color: var(--text); animation: door-glow 1.6s ease-in-out infinite; }
+
+.door-loading { min-height: 100dvh; display: grid; place-items: center; }
+.door-loading-logo { width: 120px; height: auto; color: var(--text); opacity: 0.5; }
+
+.door-app {
+  max-width: 560px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  padding: calc(12px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+.door-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.door-event { display: grid; gap: 6px; }
+.door-event .input { min-height: 50px; font-size: 1rem; }
+.door-count { display: flex; align-items: baseline; gap: 10px; padding: 4px 2px; }
+.door-count-value { font-family: var(--serif); font-size: 3.4rem; font-weight: 600; line-height: 1; font-variant-numeric: lining-nums; }
+.door-count-label { color: var(--muted); font-size: 0.74rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+
+.door-camera { position: relative; display: none; aspect-ratio: 1; overflow: hidden; border-radius: 20px; background: #000; border: 1px solid var(--line); }
+.door-camera.is-on { display: block; }
+.door-camera video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.door-camera-frame { position: absolute; inset: 16%; border: 3px solid rgba(255, 255, 255, 0.85); border-radius: 18px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.28); pointer-events: none; }
+.door-busy { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); padding: 6px 14px; border-radius: 999px; background: rgba(0, 0, 0, 0.6); font-size: 0.8rem; font-weight: 700; }
+
+.door-actions { display: grid; gap: 10px; }
+.btn.is-listening { border-color: var(--text); animation: door-glow 1.6s ease-in-out infinite; }
+@keyframes door-glow { 50% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.14); } }
+.door-hint { color: var(--muted); text-align: center; font-size: 0.92rem; }
+.door-notice { color: var(--warn-text); font-weight: 600; text-align: center; }
+
+.door-manual summary { cursor: pointer; color: var(--text-2); font-size: 0.76rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; list-style: none; }
+.door-manual summary::-webkit-details-marker { display: none; }
+.door-manual-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 12px; }
+.door-manual-form .input { min-height: 50px; font-size: 0.95rem; }
+
+.door-log { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; }
+.door-log-mark { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; font-size: 0.85rem; }
+.door-log.is-ok .door-log-mark { background: var(--ok-soft); color: var(--ok-text); }
+.door-log.is-bad .door-log-mark { background: var(--bad-soft); color: var(--bad-text); }
+.door-log-body { flex: 1; min-width: 0; }
+.door-log-main { font-weight: 700; overflow-wrap: anywhere; }
+.door-log-time { flex: none; color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+
+/* Resultado a pantalla completa (se mira de reojo, de noche) */
+.door-result {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: calc(22px + env(safe-area-inset-top)) 18px calc(26px + env(safe-area-inset-bottom));
+  color: #fff;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+.door-result.is-ok { background: #138a4e; }
+.door-result.is-bad { background: #c62828; }
+.door-result-logo { width: 64px; height: auto; opacity: 0.85; }
+.door-result-inner { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; width: 100%; animation: door-pop 0.2s ease-out; }
+@keyframes door-pop { from { transform: scale(0.95); opacity: 0.5; } }
+.door-result-icon { display: grid; place-items: center; width: min(34vw, 140px); aspect-ratio: 1; border: 4px solid currentColor; border-radius: 50%; margin-bottom: 6px; }
+.door-result-icon svg { width: 58%; height: auto; }
+.door-result-title { font-family: var(--serif); font-size: clamp(2.6rem, 12.5vw, 5.2rem); font-weight: 700; line-height: 0.95; text-transform: uppercase; overflow-wrap: anywhere; font-variant-numeric: lining-nums; }
+.door-result-name { font-family: var(--serif); font-size: clamp(2.4rem, 12vw, 4.8rem); font-weight: 600; line-height: 1; overflow-wrap: anywhere; }
+.door-result-detail { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.04em; opacity: 0.95; max-width: 28ch; }
+.door-result-progress { width: 100%; max-width: 480px; height: 3px; overflow: hidden; border-radius: 2px; background: rgba(255, 255, 255, 0.25); }
+.door-result-progress span { display: block; height: 100%; background: currentColor; transform-origin: left; animation: door-shrink linear forwards; }
+@keyframes door-shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.door-result-hint { margin-top: 12px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.8; }
+.btn-xl { width: 100%; min-height: 78px; background: var(--text); color: var(--ink); font-size: 1rem; letter-spacing: 0.22em; }
+.btn-xl.is-stop { background: transparent; color: var(--text); border-color: var(--line-strong); }
+.btn-tall { min-height: 60px; }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { issueInvitation, type InvitationFormState } from '@/app/invitaciones/actions'
+import { issueInvitation, type InvitationFormState } from '@/actions/invitations'
 import { ShareInvitation } from '@/components/ShareInvitation'
 import { SubmitButton } from '@/components/SubmitButton'
 

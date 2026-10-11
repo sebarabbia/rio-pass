@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
-import { NoAccess, PageLoading } from '@/components/PageStates'
+import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser } from '@/lib/auth'
 import { flyerUrl } from '@/lib/events'
 import { toLocalInputs } from '@/lib/format'
@@ -22,7 +22,7 @@ export default function EditEventPage({ params }: PageProps<'/organizador/evento
 async function EditEvent({ params }: { params: PageProps<'/organizador/eventos/[id]'>['params'] }) {
   const { id } = await params
   const user = await requireUser(`/organizador/eventos/${id}`)
-  if (!hasRole(user, 'organizador')) return <NoAccess />
+  if (!hasRole(user, 'organizador')) notFound()
 
   const supabase = await createClient()
   const [{ data: event }, { data: seasons }] = await Promise.all([

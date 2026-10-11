@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { ConfirmSubmit } from '@/components/ConfirmSubmit'
-import { NoAccess, PageLoading } from '@/components/PageStates'
+import { PageLoading } from '@/components/PageStates'
 import { SubmitButton } from '@/components/SubmitButton'
 import { DEMO_EVENTS, DEMO_SLUGS } from '@/demo/events'
 import { hasRole, requireUser } from '@/lib/auth'
@@ -21,7 +22,7 @@ export default function DemoPage() {
 
 async function Demo() {
   const user = await requireUser('/organizador/demo')
-  if (!hasRole(user, 'organizador')) return <NoAccess />
+  if (!hasRole(user, 'organizador')) notFound()
 
   const supabase = await createClient()
   const { count } = await supabase.from('events').select('id', { count: 'exact', head: true }).in('slug', DEMO_SLUGS)

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
-import { NoAccess, PageLoading } from '@/components/PageStates'
+import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { OrganizerNav } from '../OrganizerNav'
@@ -22,7 +23,7 @@ export default function SeasonsPage() {
 
 async function Seasons() {
   const user = await requireUser('/organizador/temporadas')
-  if (!hasRole(user, 'organizador')) return <NoAccess />
+  if (!hasRole(user, 'organizador')) notFound()
 
   const supabase = await createClient()
   const { data: seasons } = await supabase.from('seasons').select('id, name, starts_on, ends_on, is_current').order('starts_on', { ascending: false })

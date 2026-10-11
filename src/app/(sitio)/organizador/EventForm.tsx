@@ -1,13 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState, useState, useTransition, type FormEvent } from 'react'
+import { useActionState, useRef, useState, useTransition, type FormEvent } from 'react'
 import { DEFAULT_RRPP_QUOTA, DEFAULT_SECTORS, DEFAULT_VENUE } from '@/lib/event-defaults'
+import { compressImage, formatBytes, type CompressedImage } from '@/lib/image'
 import { createClient } from '@/lib/supabase/client'
 import { saveEvent, type EventFormState } from './actions'
-
-const FLYER_TYPES: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
-const MAX_FLYER_BYTES = 5 * 1024 * 1024
 
 export type EventFormValues = {
   id: string
@@ -30,24 +28,42 @@ export function EventForm({ initial, seasons }: { initial?: EventFormValues; sea
   const [state, formAction] = useActionState<EventFormState, FormData>(saveEvent, {})
   const [isPending, startTransition] = useTransition()
   const [uploading, setUploading] = useState(false)
+  const [optimizing, setOptimizing] = useState(false)
+  const [flyerInfo, setFlyerInfo] = useState<string | null>(null)
   const [localError, setLocalError] = useState<string | null>(null)
   const [preview, setPreview] = useState<string | null>(initial?.flyerUrl ?? null)
-  const busy = uploading || isPending
+  const flyer = useRef<CompressedImage | null>(null)
+  const busy = uploading || optimizing || isPending
   const defaultSeason = initial ? (initial.seasonId ?? '') : (seasons.find((s) => s.is_current)?.id ?? '')
 
-  function onFlyerChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // Cualquier foto sirve: se achica y recomprime en el celular antes de subirla.
+  async function onFlyerChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     setLocalError(null)
+    setFlyerInfo(null)
+    flyer.current = null
     if (!file) return setPreview(initial?.flyerUrl ?? null)
-    if (!FLYER_TYPES[file.type]) {
+    if (!file.type.startsWith('image/')) {
       e.target.value = ''
-      return setLocalError('El flyer tiene que ser JPG, PNG o WebP.')
+      return setLocalError('El flyer tiene que ser una imagen.')
     }
-    if (file.size > MAX_FLYER_BYTES) {
+    setOptimizing(true)
+    try {
+      const result = await compressImage(file)
+      flyer.current = result
+      setPreview(URL.createObjectURL(result.file))
+      setFlyerInfo(
+        result.file.size < result.originalBytes
+          ? `Optimizado: ${formatBytes(result.originalBytes)} → ${formatBytes(result.file.size)}`
+          : `Listo (${formatBytes(result.file.size)})`,
+      )
+    } catch {
       e.target.value = ''
-      return setLocalError('El flyer pesa más de 5 MB. Exportalo más liviano.')
+      setPreview(initial?.flyerUrl ?? null)
+      setLocalError('No se pudo abrir esa imagen. Probá exportarla como JPG o PNG.')
+    } finally {
+      setOptimizing(false)
     }
-    setPreview(URL.createObjectURL(file))
   }
 
   // El flyer se sube directo del navegador a Supabase Storage (las políticas RLS
@@ -57,12 +73,12 @@ export function EventForm({ initial, seasons }: { initial?: EventFormValues; sea
     e.preventDefault()
     setLocalError(null)
     const formData = new FormData(e.currentTarget)
-    const file = formData.get('flyer')
     formData.delete('flyer')
 
-    if (file instanceof File && file.size > 0) {
+    if (flyer.current) {
       setUploading(true)
-      const path = `${crypto.randomUUID()}.${FLYER_TYPES[file.type]}`
+      const { file, ext } = flyer.current
+      const path = `${crypto.randomUUID()}.${ext}`
       const { error } = await createClient()
         .storage.from('event-flyers')
         .upload(path, file, { contentType: file.type, cacheControl: '31536000' })
@@ -146,8 +162,10 @@ export function EventForm({ initial, seasons }: { initial?: EventFormValues; sea
           // eslint-disable-next-line @next/next/no-img-element -- vista previa local
           <img src={preview} alt="Vista previa del flyer" className="flyer-preview" />
         )}
-        <input id="flyer" name="flyer" type="file" className="input file" accept="image/jpeg,image/png,image/webp" onChange={onFlyerChange} />
-        <p className="hint">JPG, PNG o WebP, hasta 5 MB. Ideal vertical (4:5).</p>
+        <input id="flyer" name="flyer" type="file" className="input file" accept="image/*" onChange={onFlyerChange} />
+        <p className="hint" aria-live="polite">
+          {optimizing ? 'Optimizando imagen…' : flyerInfo ?? 'Cualquier imagen: se achica sola antes de subirse. Ideal vertical (4:5).'}
+        </p>
         {initial?.flyerUrl && (
           <label className="check">
             <input type="checkbox" name="removeFlyer" /> Quitar el flyer actual
@@ -169,7 +187,7 @@ export function EventForm({ initial, seasons }: { initial?: EventFormValues; sea
       <div className="form-actions">
         <Link href="/organizador" className="btn btn-ghost">Cancelar</Link>
         <button type="submit" className="btn btn-primary" disabled={busy} aria-busy={busy}>
-          {uploading ? 'Subiendo flyer…' : isPending ? 'Guardando…' : initial ? 'Guardar cambios' : 'Crear evento'}
+          {optimizing ? 'Optimizando…' : uploading ? 'Subiendo flyer…' : isPending ? 'Guardando…' : initial ? 'Guardar cambios' : 'Crear evento'}
         </button>
       </div>
     </form>

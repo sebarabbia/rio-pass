@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Suspense } from 'react'
-import { NoAccess, PageLoading } from '@/components/PageStates'
+import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser } from '@/lib/auth'
 import { flyerUrl } from '@/lib/events'
 import { formatShortDay, formatTime } from '@/lib/format'
@@ -25,7 +26,7 @@ const STATUS_PILL = { borrador: 'pill-muted', publicado: 'pill-ok', cancelado: '
 
 async function Panel() {
   const user = await requireUser('/organizador')
-  if (!hasRole(user, 'organizador')) return <NoAccess />
+  if (!hasRole(user, 'organizador')) notFound()
 
   const supabase = await createClient()
   const { data: events, error } = await supabase

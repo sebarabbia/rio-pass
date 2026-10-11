@@ -12,11 +12,10 @@ Esquema completo con RLS, registro e inicio de sesión, web pública de eventos,
 - Invitaciones QR emitidas por el organizador (sin límite) o por RRPP (con cupo, validado en la base), compartibles por WhatsApp con un link `/qr/<código>` que el invitado abre sin cuenta. Si el email tiene cuenta, aparece en "Mis QR".
 - Fechas de ejemplo cargables desde el panel.
 
-## Etapa 3: Acreditador (la puerta)
-Evolución de la demo NFC (`docs/`):
-- Una función SQL atómica `validar_acceso`: valida el QR (o la tarjeta), marca el QR como usado, registra la lectura en `access_scans` y crea la asistencia en `attendances`, todo en una sola transacción.
-- Escaneo de QR con la cámara y de NFC por UID (tarjetas `generica`), con la pantalla verde/roja de la demo.
-- Elegir el evento de la noche, ver el contador de ingresos y el historial.
+## Etapa 3: Puerta (acreditador) y tarjetas (hecha)
+- Función atómica `validate_access`: valida QR (cámara o código tipeado) o tarjeta NFC por número de serie, marca el QR como usado, registra la lectura (`access_scans`) y la asistencia (`attendances`). Anti-passback: una tarjeta entra una vez por noche.
+- Pantalla `/puerta` a pantalla completa: elegir la fecha, escanear QR con la cámara (lector nativo en Android, jsQR en iPhone), leer tarjetas NFC (Chrome Android), código a mano, resultado verde/rojo con el motivo, contador de ingresos y últimas lecturas.
+- Panel → Tarjetas: cargar tarjetas (leyéndolas por NFC o tipeando el número), asignarlas a RRPP, bloquear y eliminar.
 
 ## Etapa 4: Puntos y ranking
 - Al validar un ingreso se suman `events.attendance_points` en `points_ledger` (una vez por evento; la base ya lo garantiza).

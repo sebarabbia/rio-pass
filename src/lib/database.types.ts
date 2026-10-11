@@ -840,6 +840,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      door_stats: { Args: { _event_id: string }; Returns: Json }
+      validate_access: {
+        Args: {
+          _event_id: string
+          _method: Database["public"]["Enums"]["scan_method"]
+          _value: string
+        }
+        Returns: Json
+      }
       get_ticket_by_code: {
         Args: { _code: string }
         Returns: {
