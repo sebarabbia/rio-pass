@@ -152,11 +152,13 @@ export type Database = {
           id: string
           name: string
           published_at: string | null
+          rrpp_invite_quota: number
           season_id: string | null
           slug: string
           starts_at: string
           status: Database["public"]["Enums"]["event_status"]
           updated_at: string
+          venue: string
         }
         Insert: {
           attendance_points?: number
@@ -169,11 +171,13 @@ export type Database = {
           id?: string
           name: string
           published_at?: string | null
+          rrpp_invite_quota?: number
           season_id?: string | null
           slug: string
           starts_at: string
           status?: Database["public"]["Enums"]["event_status"]
           updated_at?: string
+          venue?: string
         }
         Update: {
           attendance_points?: number
@@ -186,11 +190,13 @@ export type Database = {
           id?: string
           name?: string
           published_at?: string | null
+          rrpp_invite_quota?: number
           season_id?: string | null
           slug?: string
           starts_at?: string
           status?: Database["public"]["Enums"]["event_status"]
           updated_at?: string
+          venue?: string
         }
         Relationships: [
           {
@@ -700,6 +706,7 @@ export type Database = {
           event_id: string
           holder_email: string | null
           holder_name: string | null
+          holder_phone: string | null
           id: string
           issued_by: string | null
           kind: Database["public"]["Enums"]["ticket_kind"]
@@ -717,6 +724,7 @@ export type Database = {
           event_id: string
           holder_email?: string | null
           holder_name?: string | null
+          holder_phone?: string | null
           id?: string
           issued_by?: string | null
           kind: Database["public"]["Enums"]["ticket_kind"]
@@ -734,6 +742,7 @@ export type Database = {
           event_id?: string
           holder_email?: string | null
           holder_name?: string | null
+          holder_phone?: string | null
           id?: string
           issued_by?: string | null
           kind?: Database["public"]["Enums"]["ticket_kind"]
@@ -831,7 +840,55 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_ticket_by_code: {
+        Args: { _code: string }
+        Returns: {
+          event_flyer_path: string
+          event_name: string
+          event_slug: string
+          event_starts_at: string
+          event_venue: string
+          holder_name: string
+          kind: Database["public"]["Enums"]["ticket_kind"]
+          sector: string
+          status: Database["public"]["Enums"]["ticket_status"]
+          used_at: string
+        }[]
+      }
+      issue_invitation: {
+        Args: {
+          _event_id: string
+          _holder_email?: string
+          _holder_name: string
+          _holder_phone?: string
+          _ticket_type_id?: string
+        }
+        Returns: {
+          code: string
+          created_at: string
+          event_id: string
+          holder_email: string | null
+          holder_name: string | null
+          holder_phone: string | null
+          id: string
+          issued_by: string | null
+          kind: Database["public"]["Enums"]["ticket_kind"]
+          order_id: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          ticket_type_id: string | null
+          updated_at: string
+          used_at: string | null
+          used_by: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      void_ticket: { Args: { _ticket_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "cliente" | "rrpp" | "organizador" | "acreditador" | "barra"

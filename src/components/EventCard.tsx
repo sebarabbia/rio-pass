@@ -23,6 +23,7 @@ export function EventCard({ event }: { event: PublicEvent }) {
             {formatShortDay(event.starts_at)} · {formatTime(event.starts_at)} h
           </p>
           <h3 className="event-name">{event.name}</h3>
+          <p className="event-venue">{event.venue}</p>
         </div>
       </Link>
     </li>

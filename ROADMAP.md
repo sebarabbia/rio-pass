@@ -5,11 +5,12 @@ El orden prioriza lo que antes valida el negocio en la puerta y deja para el fin
 ## Etapa 1: Base del sistema (hecha)
 Esquema completo con RLS, registro e inicio de sesión, web pública de eventos, perfil del cliente (datos, Mis tarjetas, Mis QR, Mis puntos) y panel del organizador para crear y publicar eventos con flyer.
 
-## Etapa 2: Organizador completo + invitaciones con QR
-- Gestión de usuarios: buscar por nombre o email y asignar roles (RRPP, acreditador, barra).
-- Temporadas: crear una y marcarla como actual.
-- Emitir invitaciones QR por evento a un usuario o a un nombre/email sin cuenta (`tickets`). Opcional: cupo de invitaciones por RRPP.
-- "Mis QR" muestra el código QR real, a pantalla completa, con brillo alto.
+## Etapa 2: Invitaciones QR, usuarios y temporadas (hecha)
+- Panel → Usuarios: buscar por nombre/email y asignar roles (RRPP, acreditador, barra, organizador).
+- Panel → Temporadas: crear y marcar la actual.
+- Eventos con lugar, sectores (General / +25) y cupo de QR sin cargo por RRPP.
+- Invitaciones QR emitidas por el organizador (sin límite) o por RRPP (con cupo, validado en la base), compartibles por WhatsApp con un link `/qr/<código>` que el invitado abre sin cuenta. Si el email tiene cuenta, aparece en "Mis QR".
+- Fechas de ejemplo cargables desde el panel.
 
 ## Etapa 3: Acreditador (la puerta)
 Evolución de la demo NFC (`docs/`):

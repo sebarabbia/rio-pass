@@ -8,6 +8,7 @@ import { formatShortDay, formatTime } from '@/lib/format'
 import { createClient } from '@/lib/supabase/server'
 import { setEventStatus } from './actions'
 import { DeleteEventButton } from './DeleteEventButton'
+import { OrganizerNav } from './OrganizerNav'
 
 export const metadata: Metadata = { title: 'Panel de organizador' }
 
@@ -29,13 +30,14 @@ async function Panel() {
   const supabase = await createClient()
   const { data: events, error } = await supabase
     .from('events')
-    .select('id, slug, name, starts_at, status, flyer_path')
+    .select('id, slug, name, starts_at, status, flyer_path, tickets(count)')
     .order('starts_at', { ascending: false })
 
   return (
     <div className="page">
       <p className="kicker">Panel de organizador</p>
       <h1 className="page-title">Eventos</h1>
+      <OrganizerNav current="eventos" />
       <Link href="/organizador/eventos/nuevo" className="btn btn-primary btn-block">+ Nuevo evento</Link>
 
       {error && <p className="form-error">No se pudieron cargar los eventos: {error.message}</p>}
@@ -50,6 +52,7 @@ async function Panel() {
       <ul className="list section-block">
         {events?.map((event) => {
           const flyer = flyerUrl(event.flyer_path)
+          const qrCount = event.tickets[0]?.count ?? 0
           return (
             <li key={event.id} className="card admin-event">
               <div className="admin-event-main">
@@ -66,6 +69,9 @@ async function Panel() {
                 </div>
               </div>
               <div className="admin-event-actions">
+                <Link href={`/organizador/eventos/${event.id}/invitaciones`} className="btn btn-primary btn-sm">
+                  Invitaciones ({qrCount})
+                </Link>
                 <Link href={`/organizador/eventos/${event.id}`} className="btn btn-secondary btn-sm">Editar</Link>
                 <form action={setEventStatus}>
                   <input type="hidden" name="id" value={event.id} />
@@ -84,9 +90,11 @@ async function Panel() {
         })}
       </ul>
 
-      <div className="card notice section-block">
+      <Link href="/organizador/demo" className="btn btn-ghost btn-block section-block">Fechas de ejemplo</Link>
+
+      <div className="card notice">
         <p className="card-title">Próximamente en este panel</p>
-        <p className="muted">Invitaciones con QR, alta y bloqueo de tarjetas NFC, usuarios y roles, y estadísticas de asistencia.</p>
+        <p className="muted">Validación en la puerta, alta y bloqueo de tarjetas NFC, y estadísticas de asistencia.</p>
       </div>
     </div>
   )

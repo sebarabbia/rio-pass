@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import type { Database } from '@/lib/database.types'
 
 // Rutas que requieren estar logueado. El permiso por rol se verifica en cada página.
-const PROTECTED_PREFIXES = ['/cuenta', '/organizador']
+const PROTECTED_PREFIXES = ['/cuenta', '/organizador', '/rrpp']
 
 /** Refresca la sesión de Supabase en cada request y protege las rutas privadas. */
 export async function updateSession(request: NextRequest) {

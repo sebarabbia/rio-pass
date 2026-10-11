@@ -38,6 +38,9 @@ async function HeaderAuth() {
       {hasRole(user, 'organizador') && (
         <Link href="/organizador" className="nav-link">Panel</Link>
       )}
+      {hasRole(user, 'rrpp') && (
+        <Link href="/rrpp" className="nav-link">RRPP</Link>
+      )}
       <Link href="/cuenta" className="btn btn-secondary btn-sm">
         Mi cuenta
       </Link>

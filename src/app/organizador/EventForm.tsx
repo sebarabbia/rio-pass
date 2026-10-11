@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useActionState, useState, useTransition, type FormEvent } from 'react'
+import { DEFAULT_RRPP_QUOTA, DEFAULT_SECTORS, DEFAULT_VENUE } from '@/lib/event-defaults'
 import { createClient } from '@/lib/supabase/client'
 import { saveEvent, type EventFormState } from './actions'
 
@@ -17,15 +18,22 @@ export type EventFormValues = {
   description: string
   status: 'borrador' | 'publicado' | 'cancelado'
   flyerUrl: string | null
+  venue: string
+  sectors: string
+  quota: number
+  seasonId: string | null
 }
 
-export function EventForm({ initial }: { initial?: EventFormValues }) {
+type Season = { id: string; name: string; is_current: boolean }
+
+export function EventForm({ initial, seasons }: { initial?: EventFormValues; seasons: Season[] }) {
   const [state, formAction] = useActionState<EventFormState, FormData>(saveEvent, {})
   const [isPending, startTransition] = useTransition()
   const [uploading, setUploading] = useState(false)
   const [localError, setLocalError] = useState<string | null>(null)
   const [preview, setPreview] = useState<string | null>(initial?.flyerUrl ?? null)
   const busy = uploading || isPending
+  const defaultSeason = initial ? (initial.seasonId ?? '') : (seasons.find((s) => s.is_current)?.id ?? '')
 
   function onFlyerChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -96,10 +104,40 @@ export function EventForm({ initial }: { initial?: EventFormValues }) {
       <p className="hint">Hora de Argentina. Si cierra después de medianoche, se toma como el día siguiente.</p>
 
       <div className="field">
+        <label htmlFor="venue">Lugar</label>
+        <input id="venue" name="venue" className="input" maxLength={120} defaultValue={initial?.venue ?? DEFAULT_VENUE} required />
+      </div>
+
+      <div className="field">
         <label htmlFor="description">
           Descripción <span className="optional">(opcional)</span>
         </label>
         <textarea id="description" name="description" className="input textarea" rows={5} maxLength={4000} defaultValue={initial?.description} placeholder="Line-up, dress code, info útil…" />
+      </div>
+
+      <div className="field">
+        <label htmlFor="sectors">Sectores</label>
+        <input id="sectors" name="sectors" className="input" maxLength={200} defaultValue={initial?.sectors ?? DEFAULT_SECTORS.join(', ')} />
+        <p className="hint">Separados por coma. Se muestran en la web y se eligen al generar cada QR.</p>
+      </div>
+
+      <div className="field-row two">
+        <div className="field">
+          <label htmlFor="quota">QR sin cargo por RRPP</label>
+          <input id="quota" name="quota" type="number" inputMode="numeric" min={0} max={1000} className="input" defaultValue={initial?.quota ?? DEFAULT_RRPP_QUOTA} required />
+        </div>
+        <div className="field">
+          <label htmlFor="seasonId">Temporada</label>
+          <select id="seasonId" name="seasonId" className="input" defaultValue={defaultSeason}>
+            <option value="">Sin temporada</option>
+            {seasons.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+                {s.is_current ? ' (actual)' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="field">

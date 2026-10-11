@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { NoAccess, PageLoading } from '@/components/PageStates'
@@ -24,19 +25,33 @@ async function EditEvent({ params }: { params: PageProps<'/organizador/eventos/[
   if (!hasRole(user, 'organizador')) return <NoAccess />
 
   const supabase = await createClient()
-  const { data: event } = await supabase
-    .from('events')
-    .select('id, name, description, starts_at, ends_at, status, flyer_path')
-    .eq('id', id)
-    .maybeSingle()
+  const [{ data: event }, { data: seasons }] = await Promise.all([
+    supabase
+      .from('events')
+      .select('id, name, description, venue, starts_at, ends_at, status, flyer_path, rrpp_invite_quota, season_id, ticket_types(name, sort_order, is_active)')
+      .eq('id', id)
+      .maybeSingle(),
+    supabase.from('seasons').select('id, name, is_current').order('starts_on', { ascending: false }),
+  ])
   if (!event) notFound()
 
   const start = toLocalInputs(event.starts_at)
+  const sectors = event.ticket_types
+    .filter((t) => t.is_active)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((t) => t.name)
+    .join(', ')
+
   return (
     <div className="page">
+      <Link href="/organizador" className="back-link">← Eventos</Link>
       <p className="kicker">Panel de organizador</p>
       <h1 className="page-title">Editar evento</h1>
+      <Link href={`/organizador/eventos/${event.id}/invitaciones`} className="btn btn-secondary btn-block">
+        Invitaciones QR de este evento
+      </Link>
       <EventForm
+        seasons={seasons ?? []}
         initial={{
           id: event.id,
           name: event.name,
@@ -46,6 +61,10 @@ async function EditEvent({ params }: { params: PageProps<'/organizador/eventos/[
           description: event.description,
           status: event.status,
           flyerUrl: flyerUrl(event.flyer_path),
+          venue: event.venue,
+          sectors,
+          quota: event.rrpp_invite_quota,
+          seasonId: event.season_id,
         }}
       />
     </div>

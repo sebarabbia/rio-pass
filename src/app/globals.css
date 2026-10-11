@@ -273,3 +273,90 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
+
+/* ================================================================ Etapa 2 */
+.small { font-size: 0.86rem; }
+.center-text { text-align: center; }
+.field-row.two { grid-template-columns: 1fr 1fr; }
+.event-venue { color: var(--muted); font-size: 0.9rem; }
+.link-card { display: flex; text-decoration: none; transition: border-color 0.15s ease; }
+.link-card:hover { border-color: var(--line-strong); }
+.link-hint { margin-top: 4px; color: var(--text-2); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+
+/* Sub-navegación del panel */
+.subnav { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.subnav-link {
+  padding: 12px 12px 10px;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.subnav-link[aria-current='page'] { color: var(--text); border-bottom-color: var(--text); }
+
+/* Usuarios */
+.search { display: grid; grid-template-columns: 1fr; gap: 8px; }
+@media (min-width: 520px) { .search { grid-template-columns: 1fr 160px auto; } }
+.user-card { display: grid; gap: 12px; }
+.role-toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+.role-toggle {
+  appearance: none;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.role-toggle.is-on { background: var(--text); border-color: var(--text); color: var(--ink); }
+.role-toggle:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Estadísticas */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat { padding: 12px 6px 14px; border: 1px solid var(--line); border-radius: var(--radius); text-align: center; }
+.stat b { display: block; font-family: var(--serif); font-size: 2.2rem; font-weight: 600; line-height: 1.05; font-variant-numeric: lining-nums; }
+.stat span { color: var(--muted); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+
+/* Invitaciones */
+.share-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.success-card { display: grid; gap: 10px; border-color: rgba(134, 227, 173, 0.45); background: var(--ok-soft); }
+.invitation { display: grid; gap: 12px; }
+.invitation.is-void { opacity: 0.6; }
+.invitation-info { min-width: 0; }
+.invitation-info .card-title { font-size: 1.3rem; overflow-wrap: anywhere; }
+.invitation-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.invitation-actions form { display: contents; }
+.quota-text { color: var(--text-2); font-size: 0.9rem; margin-top: 4px; }
+.quota-bar { display: block; height: 4px; border-radius: 2px; background: var(--surface-strong); overflow: hidden; margin-top: 6px; }
+.quota-bar span { display: block; height: 100%; background: var(--text); }
+.quota-card { text-align: center; display: grid; gap: 2px; }
+.quota-big { font-family: var(--serif); font-size: 3.6rem; font-weight: 600; line-height: 1; font-variant-numeric: lining-nums; }
+
+/* Página del QR (la que recibe el invitado) */
+.ticket-page { justify-items: stretch; text-align: center; }
+.ticket-when { color: var(--text-2); }
+.ticket-banner { padding: 14px; border-radius: 12px; background: var(--bad-soft); color: var(--bad-text); font-weight: 700; }
+.ticket-card {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 20px 18px 22px;
+  border-radius: 22px;
+  background: #fff;
+  color: var(--ink);
+}
+.ticket-card.is-invalid .ticket-qr { opacity: 0.15; }
+.ticket-qr { width: min(78vw, 320px); aspect-ratio: 1; }
+.ticket-qr svg { width: 100%; height: 100%; display: block; }
+.ticket-holder { font-family: var(--serif); font-size: 1.9rem; font-weight: 700; line-height: 1.1; margin-top: 6px; overflow-wrap: anywhere; }
+.ticket-sector { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #4c5d63; }
