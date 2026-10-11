@@ -88,4 +88,8 @@ Volvé a entrar: aparece **Panel** en el menú. Desde ahí se asignan los demás
 
 ## Deploy (Vercel)
 
-Importar el repo en Vercel y cargar `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` y `NEXT_PUBLIC_SITE_URL` (la URL final, para los links de los QR). Actualizar la Site URL en Supabase.
+1. En [vercel.com/new](https://vercel.com/new), importar el repo `sebarabbia/rio-pass` (rama `main`) y tocar **Deploy**. No hace falta cargar variables: la URL y la publishable key de Supabase son públicas y están en `src/lib/supabase/config.ts` (se pueden pisar con `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`).
+2. Opcional: `NEXT_PUBLIC_SITE_URL` con la URL final, si se usa un dominio propio para los links de los QR.
+3. En Supabase → Authentication → URL Configuration: Site URL = la URL de Vercel, y agregar `<url>/auth/confirm` a Redirect URLs.
+
+Cada push a `main` se publica solo. La demo NFC sigue en GitHub Pages, servida desde `docs/`.

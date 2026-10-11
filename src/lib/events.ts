@@ -1,6 +1,7 @@
 import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
 import { createPublicClient } from '@/lib/supabase/public'
+import { SUPABASE_URL } from '@/lib/supabase/config'
 import type { Tables } from '@/lib/database.types'
 
 export type PublicEvent = Pick<
@@ -25,7 +26,7 @@ export const FLYERS_BUCKET = 'event-flyers'
 
 export function flyerUrl(path: string | null) {
   if (!path) return null
-  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${FLYERS_BUCKET}/${path}`
+  return `${SUPABASE_URL}/storage/v1/object/public/${FLYERS_BUCKET}/${path}`
 }
 
 /** Desde cuándo un evento cuenta como "próximo": incluye los que empezaron hace menos de 12 h. */
