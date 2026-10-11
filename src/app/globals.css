@@ -94,9 +94,6 @@ img { max-width: 100%; display: block; }
   text-decoration: none;
 }
 .nav-placeholder { display: inline-block; width: 104px; height: 40px; }
-@media (max-width: 380px) {
-  .nav > .nav-link:first-child { display: none; } /* en pantallas chicas queda solo la cuenta */
-}
 
 /* ---------------------------------------------------------------- Layout */
 .main { flex: 1; width: 100%; max-width: var(--max); margin: 0 auto; }
