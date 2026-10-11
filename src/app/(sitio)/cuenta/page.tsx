@@ -5,6 +5,7 @@ import { logout } from '@/app/auth/actions'
 import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser } from '@/lib/auth'
 import { firstName, formatShortDay, formatTime } from '@/lib/format'
+import { getMyRanking, REASON_LABELS, standingMessage } from '@/lib/ranking'
 import { createClient } from '@/lib/supabase/server'
 import { ProfileForm } from './ProfileForm'
 
@@ -25,25 +26,26 @@ async function Account() {
   const user = await requireUser('/cuenta')
   const supabase = await createClient()
 
-  const [{ data: cards }, { data: tickets }, { data: season }] = await Promise.all([
+  const [{ data: cards }, { data: tickets }, me] = await Promise.all([
     supabase.from('nfc_cards').select('id, uid, status, label').eq('user_id', user.id),
     supabase
       .from('tickets')
       .select('id, kind, status, code, ticket_types(name), events(name, slug, starts_at)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
-    supabase.from('seasons').select('id, name').eq('is_current', true).maybeSingle(),
+    getMyRanking(),
   ])
 
-  let points = 0
-  if (season) {
-    const { data: movements } = await supabase
-      .from('points_ledger')
-      .select('points')
-      .eq('user_id', user.id)
-      .eq('season_id', season.id)
-    points = (movements ?? []).reduce((sum, m) => sum + m.points, 0)
-  }
+  // Últimos movimientos de puntos de la temporada actual.
+  const { data: movements } = me
+    ? await supabase
+        .from('points_ledger')
+        .select('id, points, reason, note, created_at, events(name)')
+        .eq('user_id', user.id)
+        .eq('season_id', me.season_id)
+        .order('created_at', { ascending: false })
+        .limit(6)
+    : { data: [] }
 
   const name = firstName(user.fullName)
 
@@ -120,12 +122,37 @@ async function Account() {
       <section className="section-block" aria-labelledby="puntos">
         <h2 id="puntos" className="block-title">Mis puntos</h2>
         <div className="card points-card">
-          <p className="points-value">{points}</p>
-          <p className="points-label">{season ? `puntos · ${season.name}` : 'puntos esta temporada'}</p>
+          <p className="points-value">{me?.points ?? 0}</p>
+          <p className="points-label">{me ? `puntos · ${me.season_name}` : 'puntos esta temporada'}</p>
+          {me?.position ? (
+            <p className="points-rank">
+              Puesto <strong>#{me.position}</strong> {me.league === 'rrpp' ? 'entre RRPP' : `de ${me.players}`}
+            </p>
+          ) : null}
           <p className="muted">
-            Sumás puntos cada vez que venís a Rio. Al final de la temporada premiamos al top 10 del ranking.
+            {me ? standingMessage(me) : 'Sumás puntos cada vez que venís a Rio. Al final de la temporada premiamos al top 10 del ranking.'}
           </p>
+          <Link href={me?.league === 'rrpp' ? '/ranking?liga=rrpp' : '/ranking'} className="btn btn-secondary btn-sm points-link">
+            Ver ranking
+          </Link>
         </div>
+        {movements && movements.length > 0 && (
+          <ul className="list movements">
+            {movements.map((m) => (
+              <li key={m.id} className="movement">
+                <span className={`movement-points${m.points < 0 ? ' is-negative' : ''}`}>
+                  {m.points > 0 ? `+${m.points}` : m.points}
+                </span>
+                <span className="movement-text">
+                  {REASON_LABELS[m.reason]}
+                  {m.events?.name ? ` · ${m.events.name}` : ''}
+                  {m.note ? ` · ${m.note}` : ''}
+                </span>
+                <span className="movement-date">{formatShortDay(m.created_at)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {/* ---------------- Mis datos ---------------- */}

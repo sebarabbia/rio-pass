@@ -840,7 +840,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_season_ranking: {
+        Args: { _league?: string; _season_id: string }
+        Returns: {
+          attendances: number
+          email: string | null
+          full_name: string
+          phone: string | null
+          points: number
+          pos: number
+          user_id: string
+        }[]
+      }
       door_stats: { Args: { _event_id: string }; Returns: Json }
+      my_ranking: { Args: { _season_id?: string }; Returns: Json }
+      season_ranking: {
+        Args: { _league?: string; _limit?: number; _season_id?: string }
+        Returns: {
+          attendances: number
+          is_me: boolean
+          name: string
+          points: number
+          pos: number
+        }[]
+      }
       validate_access: {
         Args: {
           _event_id: string

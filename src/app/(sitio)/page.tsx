@@ -2,7 +2,9 @@ import Link from 'next/link'
 import { Suspense } from 'react'
 import { EventCard } from '@/components/EventCard'
 import { Logo } from '@/components/Logo'
+import { RankingList } from '@/components/RankingList'
 import { getUpcomingEvents } from '@/lib/events'
+import { getPublicPodium, PRIZE_POSITIONS } from '@/lib/ranking'
 
 export default function HomePage() {
   return (
@@ -26,7 +28,27 @@ export default function HomePage() {
           <UpcomingEvents />
         </Suspense>
       </section>
+
+      <Suspense fallback={null}>
+        <RankingTeaser />
+      </Suspense>
     </>
+  )
+}
+
+/** Podio de la temporada: invita a entrar al ranking (y a crearse la cuenta). */
+async function RankingTeaser() {
+  const { season, rows } = await getPublicPodium()
+  if (!season) return null
+  return (
+    <section className="section ranking-teaser" aria-labelledby="ranking-title">
+      <h2 id="ranking-title" className="section-title">Ranking {season}</h2>
+      <p className="muted">
+        Cada noche que venís sumás puntos. Al final de la temporada, el top {PRIZE_POSITIONS} se lleva premio.
+      </p>
+      {rows.length > 0 && <RankingList rows={rows} compact />}
+      <Link href="/ranking" className="btn btn-secondary">Ver ranking</Link>
+    </section>
   )
 }
 

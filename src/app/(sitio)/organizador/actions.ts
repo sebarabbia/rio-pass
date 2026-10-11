@@ -32,6 +32,7 @@ export async function saveEvent(_prev: EventFormState, formData: FormData): Prom
   const description = String(formData.get('description') ?? '').trim()
   const sectors = parseSectors(String(formData.get('sectors') ?? ''))
   const quota = Number(formData.get('quota'))
+  const points = Number(formData.get('points'))
   const seasonId = String(formData.get('seasonId') ?? '') || null
   const status = String(formData.get('status') ?? 'borrador') as EventStatus
   const newFlyer = String(formData.get('flyerPath') ?? '') || null
@@ -43,6 +44,7 @@ export async function saveEvent(_prev: EventFormState, formData: FormData): Prom
   if (venue.length < 2 || venue.length > 120) return { error: 'Completá el lugar del evento.' }
   if (description.length > 4000) return { error: 'La descripción es demasiado larga (máximo 4000 caracteres).' }
   if (!Number.isInteger(quota) || quota < 0 || quota > 1000) return { error: 'El cupo por RRPP tiene que ser un número entre 0 y 1000.' }
+  if (!Number.isInteger(points) || points < 0 || points > 1000) return { error: 'Los puntos por venir tienen que ser un número entre 0 y 1000.' }
   if (seasonId && !UUID_RE.test(seasonId)) return { error: 'Temporada inválida.' }
   if (!STATUSES.includes(status)) return { error: 'Estado inválido.' }
   if (newFlyer && !FLYER_PATH_RE.test(newFlyer)) return { error: 'El flyer no se subió correctamente. Probá de nuevo.' }
@@ -64,6 +66,7 @@ export async function saveEvent(_prev: EventFormState, formData: FormData): Prom
     status,
     season_id: seasonId,
     rrpp_invite_quota: quota,
+    attendance_points: points,
   }
 
   let eventId = id

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useActionState, useRef, useState, useTransition, type FormEvent } from 'react'
-import { DEFAULT_RRPP_QUOTA, DEFAULT_SECTORS, DEFAULT_VENUE } from '@/lib/event-defaults'
+import { DEFAULT_ATTENDANCE_POINTS, DEFAULT_RRPP_QUOTA, DEFAULT_SECTORS, DEFAULT_VENUE } from '@/lib/event-defaults'
 import { compressImage, formatBytes, type CompressedImage } from '@/lib/image'
 import { createClient } from '@/lib/supabase/client'
 import { saveEvent, type EventFormState } from './actions'
@@ -19,6 +19,7 @@ export type EventFormValues = {
   venue: string
   sectors: string
   quota: number
+  points: number
   seasonId: string | null
 }
 
@@ -143,17 +144,23 @@ export function EventForm({ initial, seasons }: { initial?: EventFormValues; sea
           <input id="quota" name="quota" type="number" inputMode="numeric" min={0} max={1000} className="input" defaultValue={initial?.quota ?? DEFAULT_RRPP_QUOTA} required />
         </div>
         <div className="field">
-          <label htmlFor="seasonId">Temporada</label>
-          <select id="seasonId" name="seasonId" className="input" defaultValue={defaultSeason}>
-            <option value="">Sin temporada</option>
-            {seasons.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-                {s.is_current ? ' (actual)' : ''}
-              </option>
-            ))}
-          </select>
+          <label htmlFor="points">Puntos por venir</label>
+          <input id="points" name="points" type="number" inputMode="numeric" min={0} max={1000} className="input" defaultValue={initial?.points ?? DEFAULT_ATTENDANCE_POINTS} required />
         </div>
+      </div>
+      <p className="hint">Los puntos se suman al validar el ingreso en la puerta (una vez por persona). Una fecha especial puede valer más.</p>
+
+      <div className="field">
+        <label htmlFor="seasonId">Temporada</label>
+        <select id="seasonId" name="seasonId" className="input" defaultValue={defaultSeason}>
+          <option value="">Sin temporada</option>
+          {seasons.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+              {s.is_current ? ' (actual)' : ''}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="field">

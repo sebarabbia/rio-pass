@@ -9,7 +9,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <footer className="footer">
         <p>Rio · Paraná, Entre Ríos</p>
         <p>
-          <Link href="/">Eventos</Link> · <Link href="/cuenta">Mi cuenta</Link>
+          <Link href="/">Eventos</Link> · <Link href="/ranking">Ranking</Link> · <Link href="/cuenta">Mi cuenta</Link>
         </p>
       </footer>
     </>

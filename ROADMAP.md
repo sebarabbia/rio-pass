@@ -17,10 +17,12 @@ Esquema completo con RLS, registro e inicio de sesión, web pública de eventos,
 - Pantalla `/puerta` a pantalla completa: elegir la fecha, escanear QR con la cámara (lector nativo en Android, jsQR en iPhone), leer tarjetas NFC (Chrome Android), código a mano, resultado verde/rojo con el motivo, contador de ingresos y últimas lecturas.
 - Panel → Tarjetas: cargar tarjetas (leyéndolas por NFC o tipeando el número), asignarlas a RRPP, bloquear y eliminar.
 
-## Etapa 4: Puntos y ranking
-- Al validar un ingreso se suman `events.attendance_points` en `points_ledger` (una vez por evento; la base ya lo garantiza).
-- Ranking por temporada con una función que expone solo nombre y total.
-- Página de ranking y, en la cuenta, la posición del usuario. Premios al top 10 como movimientos `premio`.
+## Etapa 4: Puntos y ranking (hecha)
+- Cada asistencia suma `events.attendance_points` (configurable por evento) en `points_ledger`, una vez por evento, con un trigger sobre `attendances`. La puerta muestra los puntos sumados.
+- Invitados sin cuenta: al registrarse con el email de la invitación reciben la asistencia y los puntos.
+- Ranking por temporada en dos ligas (clientes pública, RRPP interna) con funciones que exponen solo nombre corto y total. Página `/ranking`, podio en la home, puesto y movimientos en "Mi cuenta", estadística en el panel RRPP.
+- Panel → Puntos: ranking completo y carga de premios/ajustes por persona.
+- Pendiente para cuando termine la temporada: cerrar la temporada y registrar los premios del top 10 (hoy se ve el top 10 en el panel y se entregan a mano).
 
 ## Etapa 5: Tarjetas NTAG 424 DNA
 - Programar las tarjetas con SUN/SDM: al apoyarlas abren `https://…/t?picc=…&cmac=…`.

@@ -6,6 +6,7 @@ import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser } from '@/lib/auth'
 import { flyerUrl, upcomingSince } from '@/lib/events'
 import { firstName, formatShortDay, formatTime } from '@/lib/format'
+import { getMyRanking } from '@/lib/ranking'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'Panel RRPP' }
@@ -23,12 +24,15 @@ async function RrppHome() {
   if (!hasRole(user, 'rrpp')) notFound()
 
   const supabase = await createClient()
-  const { data: events } = await supabase
-    .from('events')
-    .select('id, name, starts_at, flyer_path, rrpp_invite_quota')
-    .eq('status', 'publicado')
-    .gte('starts_at', upcomingSince())
-    .order('starts_at', { ascending: true })
+  const [{ data: events }, me] = await Promise.all([
+    supabase
+      .from('events')
+      .select('id, name, starts_at, flyer_path, rrpp_invite_quota')
+      .eq('status', 'publicado')
+      .gte('starts_at', upcomingSince())
+      .order('starts_at', { ascending: true }),
+    getMyRanking(),
+  ])
 
   // Cuántas invitaciones (no anuladas) emitió este RRPP en cada evento.
   const used = new Map<string, number>()
@@ -48,6 +52,23 @@ async function RrppHome() {
       <p className="kicker">Panel RRPP</p>
       <h1 className="page-title">Hola, {firstName(user.fullName) || 'RRPP'}</h1>
       <p className="muted">Elegí una fecha para generar QR sin cargo y mandarlos por WhatsApp. Cada fecha tiene un cupo por RRPP.</p>
+
+      {me && (
+        <Link href="/ranking?liga=rrpp" className="card link-card rrpp-rank">
+          <span className="rrpp-rank-stat">
+            <span className="my-rank-label">Ranking RRPP</span>
+            <span className="my-rank-value">{me.position ? `#${me.position}` : '–'}</span>
+          </span>
+          <span className="rrpp-rank-stat">
+            <span className="my-rank-label">Noches</span>
+            <span className="my-rank-value">{me.attendances}</span>
+          </span>
+          <span className="rrpp-rank-stat">
+            <span className="my-rank-label">Puntos</span>
+            <span className="my-rank-value">{me.points}</span>
+          </span>
+        </Link>
+      )}
 
       {!events?.length ? (
         <div className="empty">

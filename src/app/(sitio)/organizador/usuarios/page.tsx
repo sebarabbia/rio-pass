@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { PageLoading } from '@/components/PageStates'
@@ -76,6 +77,7 @@ async function Users({ searchParams }: { searchParams: PageProps<'/organizador/u
               <div>
                 <p className="card-title">{u.full_name || 'Sin nombre'}</p>
                 <p className="muted small">{[u.email, u.phone].filter(Boolean).join(' · ')}</p>
+                <Link href={`/organizador/puntos/${u.id}`} className="link-hint">Puntos →</Link>
               </div>
               <div className="role-toggles" aria-label={`Roles de ${u.full_name}`}>
                 {ASSIGNABLE.map((role) => {

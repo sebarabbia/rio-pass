@@ -13,7 +13,6 @@ export function SiteHeader() {
           <span className="brand-pass" aria-hidden="true">PASS</span>
         </Link>
         <nav className="nav" aria-label="Principal">
-          <Link href="/#eventos" className="nav-link">Eventos</Link>
           {/* La parte que depende de la sesión se resuelve aparte para no frenar la página. */}
           <Suspense fallback={<span className="nav-placeholder" aria-hidden="true" />}>
             <HeaderAuth />

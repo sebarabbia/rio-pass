@@ -14,8 +14,8 @@ Plataforma web del boliche Rio (Paraná): eventos, cuentas, invitaciones QR, tar
 ```
 docs/                        Demo NFC original (HTML estático, GitHub Pages)
 supabase/migrations/         Esquema completo en SQL (ya aplicado al proyecto)
-src/proxy.ts                 Refresca la sesión y protege /cuenta, /organizador y /rrpp
-src/lib/                     Clientes Supabase, auth (usuario + roles), eventos, fechas, QR, WhatsApp
+src/proxy.ts                 Refresca la sesión y protege /cuenta, /organizador, /rrpp y /puerta
+src/lib/                     Clientes Supabase, auth (usuario + roles), eventos, ranking, fechas, QR, WhatsApp, NFC, imágenes
 src/components/              Logo, header, tarjetas, formularios e invitaciones (compartidos)
 src/demo/                    Fechas de ejemplo (flyers de la temporada pasada)
 src/actions/                 Server Actions compartidas (invitaciones)
@@ -27,11 +27,12 @@ src/app/
     page.tsx                 Home pública con próximas fechas
     eventos/[slug]/          Detalle público (lugar, sectores, cómo entrar)
     qr/[code]/               Pantalla del QR que recibe el invitado (link de WhatsApp)
+    ranking/                 Ranking de la temporada (top 10 con premio, tu puesto)
     registro/, ingresar/     Alta e inicio de sesión (email + contraseña)
     cuenta/                  Perfil: datos, Mis QR, Mis puntos (y Mis tarjetas si tiene)
     rrpp/                    Panel RRPP: fechas, cupo, generar y compartir QR sin cargo
     organizador/             Panel: eventos, invitaciones, usuarios y roles, tarjetas NFC,
-                             temporadas, fechas de ejemplo
+                             puntos y ranking, temporadas, fechas de ejemplo
 ```
 
 ## Correrlo localmente
@@ -58,6 +59,9 @@ Las migraciones en `supabase/migrations/` ya están aplicadas al proyecto `rio-p
   - `get_ticket_by_code`: datos públicos de un QR a partir de su código (sin email ni teléfono).
   - `validate_access`: valida un ingreso en la puerta (QR, código o tarjeta NFC) de forma atómica.
   - `door_stats`: contador de ingresos de la noche.
+  - `season_ranking`: ranking de la temporada (solo nombre corto y total; la liga RRPP solo para RRPP y organizadores).
+  - `my_ranking`: puntos, puesto y distancia al top 10 del usuario logueado.
+  - `admin_season_ranking`: ranking con nombre completo y contacto, solo organizador.
 - Auxiliares en el esquema `private` (no expuesto por la API).
 
 ## Invitaciones QR (Etapa 2)
@@ -75,6 +79,15 @@ Cada fecha tiene un cupo de QR por RRPP (editable en el evento); anular un QR si
 2. En la puerta se abre **/puerta** desde el celular, se elige la fecha y se toca **Escanear QR** (cámara) o **Leer tarjetas NFC** (solo Chrome en Android). También se puede tipear el código.
 3. Cada lectura muestra pantalla completa verde (con nombre y sector) o roja con el motivo: ya usado (y a qué hora), otra fecha, anulado, QR no válido, tarjeta bloqueada / sin asignar / no reconocida, o ya ingresó esta noche.
 4. Los QR son de un solo uso. Las tarjetas entran una vez por noche (anti-passback). Cada ingreso queda registrado como asistencia, que es la base de los puntos (Etapa 4).
+
+## Puntos y ranking (Etapa 4)
+
+- Cada ingreso validado en la puerta de alguien con cuenta suma los **puntos del evento** (`events.attendance_points`, 10 por defecto; se cambia en el formulario del evento). Una vez por evento, en la temporada del evento (si no tiene, la que incluye su fecha, o la actual). Lo hace un trigger sobre `attendances`, así que vale para QR y tarjetas.
+- Un invitado que entró con QR **sin cuenta** recibe esos puntos cuando se registra con el email de la invitación.
+- **Dos ligas**: clientes (pública, en `/ranking` y en la home) y RRPP (interna: la ven solo RRPP y organizadores; un cliente no sabe que existe). Los RRPP vienen todas las noches con su tarjeta y se quedarían con el premio de los clientes.
+- El ranking público muestra solo "Nombre I." y el total. A igual puntaje va primero quien llegó antes a ese total, así el top 10 nunca queda empatado.
+- **Mi cuenta → Mis puntos**: total, puesto, cuánto falta para el top 10 y últimos movimientos. La puerta muestra "+10 puntos" al validar.
+- **Panel → Puntos**: ranking completo por temporada y liga; en cada persona, sus movimientos y un formulario para cargar un **premio** (bonus) o un **ajuste** (+/-, con nota). Los movimientos no se borran: se corrigen con otro en sentido contrario.
 
 ## Configuración de Auth (una vez, en el dashboard de Supabase)
 

@@ -28,7 +28,7 @@ async function EditEvent({ params }: { params: PageProps<'/organizador/eventos/[
   const [{ data: event }, { data: seasons }] = await Promise.all([
     supabase
       .from('events')
-      .select('id, name, description, venue, starts_at, ends_at, status, flyer_path, rrpp_invite_quota, season_id, ticket_types(name, sort_order, is_active)')
+      .select('id, name, description, venue, starts_at, ends_at, status, flyer_path, rrpp_invite_quota, attendance_points, season_id, ticket_types(name, sort_order, is_active)')
       .eq('id', id)
       .maybeSingle(),
     supabase.from('seasons').select('id, name, is_current').order('starts_on', { ascending: false }),
@@ -64,6 +64,7 @@ async function EditEvent({ params }: { params: PageProps<'/organizador/eventos/[
           venue: event.venue,
           sectors,
           quota: event.rrpp_invite_quota,
+          points: event.attendance_points,
           seasonId: event.season_id,
         }}
       />

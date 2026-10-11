@@ -442,3 +442,60 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .btn-xl { width: 100%; min-height: 78px; background: var(--text); color: var(--ink); font-size: 1rem; letter-spacing: 0.22em; }
 .btn-xl.is-stop { background: transparent; color: var(--text); border-color: var(--line-strong); }
 .btn-tall { min-height: 60px; }
+
+/* ---------------------------------------------------------------- Etapa 4: puntos y ranking */
+.ranking { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ranking-row {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.ranking-pos { font-family: var(--serif); font-size: 1.6rem; font-weight: 600; line-height: 1; text-align: center; color: var(--muted); font-variant-numeric: lining-nums tabular-nums; }
+.ranking-name { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+.ranking-points { font-family: var(--serif); font-size: 1.5rem; font-weight: 600; white-space: nowrap; font-variant-numeric: lining-nums; }
+.ranking-points small { font-family: var(--sans); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.ranking-row.is-podium { border-color: var(--line-strong); background: var(--surface-strong); }
+.ranking-row.is-podium .ranking-pos { color: var(--text); font-size: 2rem; }
+.ranking-row.is-me { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+.ranking-you { padding: 2px 8px; border-radius: 999px; background: var(--text); color: var(--ink); font-size: 0.6rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+.ranking-cut { display: flex; align-items: center; gap: 12px; margin: 10px 0 2px; color: var(--muted); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; }
+.ranking-cut::before, .ranking-cut::after { content: ''; flex: 1; height: 1px; background: var(--line-strong); }
+.ranking.is-compact .ranking-row { padding: 10px 14px; }
+.ranking-teaser { display: grid; gap: 14px; }
+.ranking-teaser .section-title { margin-bottom: 0; }
+.ranking-teaser .btn { justify-self: start; }
+
+/* Mi posición */
+.my-rank { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; text-align: center; }
+.my-rank-stat, .rrpp-rank-stat { display: grid; gap: 2px; }
+.my-rank-label { color: var(--muted); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }
+.my-rank-value { font-family: var(--serif); font-size: 2.6rem; font-weight: 600; line-height: 1; font-variant-numeric: lining-nums; }
+.my-rank-msg { grid-column: 1 / -1; color: var(--text-2); }
+.my-rank-cta { display: grid; justify-items: center; gap: 12px; text-align: center; }
+.my-rank-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.rrpp-rank { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+
+/* Puntos en la cuenta y en el panel */
+.points-rank { font-weight: 600; }
+.points-link { justify-self: center; margin-top: 8px; }
+.movements { gap: 0; margin-top: 10px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); }
+.movement { display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--line); font-size: 0.92rem; }
+.movement:first-child { border-top: 0; }
+.movement-points { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; color: var(--ok-text); font-variant-numeric: lining-nums; }
+.movement-points.is-negative { color: var(--bad-text); }
+.movement-date { color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
+.admin-rank { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 12px; }
+.admin-rank-info { display: grid; gap: 2px; min-width: 0; }
+.admin-rank-info .muted { overflow-wrap: anywhere; }
+.admin-rank.is-prize .ranking-pos { color: var(--text); }
+.chip-link { display: inline-block; color: var(--muted); text-decoration: none; }
+.chip-link[aria-current='page'] { background: var(--text); border-color: var(--text); color: var(--ink); }
+a.link-hint { display: inline-block; text-decoration: none; }
+
+/* Puerta: puntos que sumó el ingreso */
+.door-result-points { margin-top: 4px; padding: 6px 16px; border: 2px solid currentColor; border-radius: 999px; font-size: 1rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }

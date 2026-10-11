@@ -68,6 +68,10 @@ async function Ticket({ params }: { params: PageProps<'/qr/[code]'>['params'] })
       <Link href={`/eventos/${ticket.event_slug}`} className="btn btn-secondary btn-block">
         Ver el evento
       </Link>
+      <p className="muted small center-text">
+        Con cuenta en Rio Pass sumás puntos cada noche que venís y entrás al <Link href="/ranking">ranking</Link>.{' '}
+        <Link href="/registro">Creá tu cuenta</Link>.
+      </p>
     </div>
   )
 }

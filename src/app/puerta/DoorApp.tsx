@@ -18,8 +18,9 @@ type DoorResult = {
   previous_at: string | null
   other_event: string | null
   count: number
+  points: number | null
 }
-type Shown = { key: number; ok: boolean; title: string; name: string | null; detail: string | null }
+type Shown = { key: number; ok: boolean; title: string; name: string | null; detail: string | null; points?: number | null }
 type LogEntry = Shown & { at: number; method: ScanMethod }
 
 type DetectedBarcode = { rawValue: string }
@@ -38,7 +39,7 @@ function describe(r: DoorResult, key: number): Shown {
   const kind = r.kind ? KIND_LABEL[r.kind] : null
   const at = r.previous_at ? formatTime(r.previous_at) : null
   if (r.result === 'permitido') {
-    return { key, ok: true, title: 'Acceso permitido', name: r.holder, detail: [kind, r.sector].filter(Boolean).join(' · ') || null }
+    return { key, ok: true, title: 'Acceso permitido', name: r.holder, detail: [kind, r.sector].filter(Boolean).join(' · ') || null, points: r.points }
   }
   const bad = (title: string, detail: string | null = null, name: string | null = r.holder): Shown => ({ key, ok: false, title, name, detail })
   switch (r.reason) {
@@ -448,6 +449,7 @@ export function DoorApp({ events, staffName, isOrganizer }: { events: DoorEvent[
             <p className="door-result-title">{shown.title}</p>
             {shown.name && <p className="door-result-name">{shown.name}</p>}
             {shown.detail && <p className="door-result-detail">{shown.detail}</p>}
+            {shown.points ? <p className="door-result-points">+{shown.points} puntos</p> : null}
           </div>
           <div className="door-result-progress">
             <span key={shown.key} style={{ animationDuration: `${RESULT_MS}ms` }} />

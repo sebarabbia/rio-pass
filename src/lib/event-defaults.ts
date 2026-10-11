@@ -2,6 +2,7 @@
 export const DEFAULT_VENUE = 'Complejo Arenas · Playas del Thompson'
 export const DEFAULT_SECTORS = ['Sector General', 'Sector +25']
 export const DEFAULT_RRPP_QUOTA = 20
+export const DEFAULT_ATTENDANCE_POINTS = 10 // igual que el default de events.attendance_points
 
 /** "Sector General, Sector +25" -> ["Sector General", "Sector +25"] (sin repetidos, máx. 8). */
 export function parseSectors(text: string) {
