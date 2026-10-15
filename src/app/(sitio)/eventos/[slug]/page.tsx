@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { Logo } from '@/components/Logo'
 import { ShareEvent } from '@/components/ShareEvent'
-import { flyerUrl, getPublicEvent } from '@/lib/events'
+import { flyerUrl, getPublicEvent, GOING_MIN } from '@/lib/events'
 import { formatLongDay, formatShortDay, formatTime } from '@/lib/format'
 import { siteUrl } from '@/lib/site'
 
@@ -65,6 +65,10 @@ async function EventDetail({ params }: { params: PageProps<'/eventos/[slug]'>['p
           </>
         )}
       </p>
+
+      {event.going >= GOING_MIN && (
+        <p className="event-going is-big">🔥 {event.going} personas ya tienen su QR para esta noche</p>
+      )}
 
       <div className="event-detail-actions">
         <ShareEvent

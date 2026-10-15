@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: 'Panel RRPP' }
 
 export default function RrppPage() {
   return (
-    <Suspense fallback={<PageLoading label="Cargando tus eventos…" />}>
+    <Suspense fallback={<PageLoading label="Cargando tus fechas…" />}>
       <RrppHome />
     </Suspense>
   )
@@ -24,34 +24,28 @@ async function RrppHome() {
   if (!hasRole(user, 'rrpp')) notFound()
 
   const supabase = await createClient()
-  const [{ data: events }, me] = await Promise.all([
+  const [{ data: events }, { data: statuses }, me] = await Promise.all([
     supabase
       .from('events')
-      .select('id, name, starts_at, flyer_path, rrpp_invite_quota')
+      .select('id, name, starts_at, flyer_path')
       .eq('status', 'publicado')
       .gte('starts_at', upcomingSince())
       .order('starts_at', { ascending: true }),
+    supabase.rpc('rrpp_event_status'),
     getMyRanking(),
   ])
-
-  // Cuántas invitaciones (no anuladas) emitió este RRPP en cada evento.
-  const used = new Map<string, number>()
-  if (events?.length) {
-    const { data: mine } = await supabase
-      .from('tickets')
-      .select('event_id')
-      .eq('issued_by', user.id)
-      .eq('kind', 'invitacion')
-      .neq('status', 'anulado')
-      .in('event_id', events.map((e) => e.id))
-    for (const t of mine ?? []) used.set(t.event_id, (used.get(t.event_id) ?? 0) + 1)
-  }
+  const statusByEvent = new Map((statuses ?? []).map((s) => [s.event_id, s]))
+  const manager = statuses?.find((s) => s.manager_name)?.manager_name
 
   return (
     <div className="page">
       <p className="kicker">Panel RRPP</p>
       <h1 className="page-title">Hola, {firstName(user.fullName) || 'RRPP'}</h1>
-      <p className="muted">Elegí una fecha para generar QR sin cargo y mandarlos por WhatsApp. Cada fecha tiene un cupo por RRPP.</p>
+      <p className="muted">
+        En cada fecha tenés QR sin cargo (uno es el tuyo, intransferible). Se habilitan cuando hacés la primera difusión.
+        Hay un tope total por fecha: cuando se llega, nadie puede regalar más.
+        {manager ? ` Tu organizador es ${manager}.` : ''}
+      </p>
 
       {me && (
         <Link href="/ranking?liga=rrpp" className="card link-card rrpp-rank">
@@ -73,14 +67,17 @@ async function RrppHome() {
       {!events?.length ? (
         <div className="empty">
           <p className="empty-title">No hay fechas publicadas</p>
-          <p>Cuando se publique la próxima, vas a poder generar invitaciones desde acá.</p>
+          <p>Cuando se publique la próxima, la vas a ver acá.</p>
         </div>
       ) : (
         <ul className="list">
           {events.map((event) => {
-            const count = used.get(event.id) ?? 0
+            const status = statusByEvent.get(event.id)
             const flyer = flyerUrl(event.flyer_path)
-            const pct = event.rrpp_invite_quota ? Math.min(100, Math.round((count / event.rrpp_invite_quota) * 100)) : 100
+            const enabled = !!status?.enabled
+            const left = status ? Math.max(0, status.quota - status.used) : 0
+            const capLeft = status?.cap != null ? Math.max(0, status.cap - status.cap_used) : null
+            const pct = status?.quota ? Math.min(100, Math.round((status.used / status.quota) * 100)) : 0
             return (
               <li key={event.id}>
                 <Link href={`/rrpp/${event.id}`} className="card admin-event link-card">
@@ -92,10 +89,17 @@ async function RrppHome() {
                     <div className="admin-event-info">
                       <p className="card-title">{event.name}</p>
                       <p className="muted">{formatShortDay(event.starts_at)} · {formatTime(event.starts_at)} h</p>
-                      <p className="quota-text">
-                        <strong>{count}</strong> de {event.rrpp_invite_quota} QR usados
-                      </p>
-                      <span className="quota-bar" aria-hidden="true"><span style={{ width: `${pct}%` }} /></span>
+                      {enabled && status ? (
+                        <>
+                          <p className="quota-text">
+                            Te quedan <strong>{left}</strong> de {status.quota}
+                            {capLeft !== null ? ` · ${capLeft === 0 ? 'tope alcanzado' : `quedan ${capLeft} en total`}` : ''}
+                          </p>
+                          <span className="quota-bar" aria-hidden="true"><span style={{ width: `${pct}%` }} /></span>
+                        </>
+                      ) : (
+                        <span className="pill pill-muted">Esperando habilitación</span>
+                      )}
                     </div>
                   </div>
                 </Link>

@@ -12,6 +12,7 @@ export type InvitationRow = {
   status: 'valido' | 'usado' | 'anulado'
   sector: string | null
   issuer?: string | null
+  kind?: 'entrada' | 'invitacion' | 'rrpp'
 }
 
 const STATUS = {
@@ -50,7 +51,14 @@ export function InvitationList({ rows, eventId, eventName, when, origin, showIss
               <div className="invitation-info">
                 <p className="card-title">{name}</p>
                 <p className="muted small">
-                  {[row.sector, contact, showIssuer && row.issuer ? `por ${row.issuer}` : null].filter(Boolean).join(' · ')}
+                  {[
+                    row.kind === 'rrpp' ? 'QR propio de RRPP' : null,
+                    row.sector,
+                    contact,
+                    showIssuer && row.issuer && row.kind !== 'rrpp' ? `por ${row.issuer}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
                 </p>
               </div>
               <span className={`pill ${STATUS[row.status].pill}`}>{STATUS[row.status].label}</span>

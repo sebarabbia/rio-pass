@@ -13,15 +13,17 @@ type ScanMethod = 'qr' | 'nfc' | 'manual'
 type DoorResult = {
   result: 'permitido' | 'rechazado'
   reason: string | null
-  kind: 'invitacion' | 'entrada' | 'tarjeta' | null
+  kind: 'invitacion' | 'entrada' | 'tarjeta' | 'rrpp' | null
   holder: string | null
   sector: string | null
   previous_at: string | null
   other_event: string | null
   count: number
   points: number | null
+  rrpp: boolean | null
 }
-type Shown = { key: number; ok: boolean; title: string; name: string | null; detail: string | null; points?: number | null }
+// rrpp: ingreso válido de un RRPP (la pantalla se pone azul en vez de verde).
+type Shown = { key: number; ok: boolean; rrpp?: boolean; title: string; name: string | null; detail: string | null; points?: number | null }
 type LogEntry = Shown & { at: number; method: ScanMethod }
 
 type DetectedBarcode = { rawValue: string }
@@ -33,14 +35,23 @@ type BarcodeDetectorCtor = {
 const RESULT_MS = 2600 // cuánto queda el resultado en pantalla
 const DEDUPE_MS = 4000 // la misma lectura repetida en este lapso se ignora
 const EVENT_KEY = 'rioPass.puerta.evento'
-const KIND_LABEL = { invitacion: 'Invitación', entrada: 'Entrada', tarjeta: 'Tarjeta RRPP' } as const
+const KIND_LABEL = { invitacion: 'Invitación', entrada: 'Entrada', tarjeta: 'Tarjeta', rrpp: 'QR de RRPP' } as const
 
 // ---------- Textos del resultado ----------
 function describe(r: DoorResult, key: number): Shown {
   const kind = r.kind ? KIND_LABEL[r.kind] : null
   const at = r.previous_at ? formatTime(r.previous_at) : null
   if (r.result === 'permitido') {
-    return { key, ok: true, title: 'Acceso permitido', name: r.holder, detail: [kind, r.sector].filter(Boolean).join(' · ') || null, points: r.points }
+    const rrpp = !!r.rrpp
+    return {
+      key,
+      ok: true,
+      rrpp,
+      title: rrpp ? 'Acceso RRPP' : 'Acceso permitido',
+      name: r.holder,
+      detail: [kind, r.sector].filter(Boolean).join(' · ') || null,
+      points: r.points,
+    }
   }
   const bad = (title: string, detail: string | null = null, name: string | null = r.holder): Shown => ({ key, ok: false, title, name, detail })
   switch (r.reason) {
@@ -447,7 +458,7 @@ export function DoorApp({ events, staffName, isOrganizer }: { events: DoorEvent[
         ) : (
           <ul className="list">
             {log.map((entry) => (
-              <li key={entry.key} className={`door-log ${entry.ok ? 'is-ok' : 'is-bad'}`}>
+              <li key={entry.key} className={`door-log ${entry.ok ? (entry.rrpp ? 'is-rrpp' : 'is-ok') : 'is-bad'}`}>
                 <span className="door-log-mark" aria-hidden="true">{entry.ok ? '✓' : '✕'}</span>
                 <div className="door-log-body">
                   <p className="door-log-main">{entry.name ?? entry.title}</p>
@@ -463,7 +474,7 @@ export function DoorApp({ events, staffName, isOrganizer }: { events: DoorEvent[
       </section>
 
       {shown && (
-        <div className={`door-result ${shown.ok ? 'is-ok' : 'is-bad'}`} role="alert" onClick={hide}>
+        <div className={`door-result ${shown.ok ? (shown.rrpp ? 'is-rrpp' : 'is-ok') : 'is-bad'}`} role="alert" onClick={hide}>
           <Logo className="door-result-logo" />
           <div className="door-result-inner" key={shown.key}>
             <div className="door-result-icon" aria-hidden="true">

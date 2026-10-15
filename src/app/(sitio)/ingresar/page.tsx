@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { Suspense } from 'react'
 import { AuthSwitchLink } from '@/components/AuthSwitchLink'
 import { LoginForm } from './LoginForm'
@@ -17,6 +18,9 @@ export default function LoginPage() {
         <Suspense fallback={<a href="/registro">Creá tu cuenta</a>}>
           <AuthSwitchLink href="/registro">Creá tu cuenta</AuthSwitchLink>
         </Suspense>
+      </p>
+      <p className="form-footnote small">
+        ¿Te regalaron un QR o te dio de alta un organizador? <Link href="/activar">Activá tu cuenta</Link>
       </p>
     </div>
   )

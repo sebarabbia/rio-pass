@@ -7,6 +7,7 @@ import { getOrigin, qrSvg, ticketUrl } from '@/lib/site'
 import { createPublicClient } from '@/lib/supabase/public'
 
 const CODE_RE = /^[A-Za-z0-9_-]{16,64}$/
+const KIND_LABEL = { invitacion: 'Invitación', entrada: 'Entrada', rrpp: 'QR de RRPP' } as const
 
 // Se usa en la metadata (vista previa de WhatsApp) y en la página: una sola consulta por request.
 const getTicket = cache(async (code: string) => {
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: PageProps<'/qr/[code]'>): Pro
   const ticket = await getTicket(code)
   const robots = { index: false, follow: false }
   if (!ticket) return { title: 'QR no encontrado', robots }
-  const kind = ticket.kind === 'invitacion' ? 'Invitación' : 'Entrada'
+  const kind = KIND_LABEL[ticket.kind]
   const title = `${kind} · ${ticket.event_name}`
   const description = `${ticket.holder_name ? `${ticket.holder_name}: ` : ''}${formatLongDay(ticket.event_starts_at)} · ${formatTime(ticket.event_starts_at)} h · ${ticket.event_venue}. Mostrá tu QR en la puerta.`
   return { title, description, robots, openGraph: { title, description }, twitter: { title, description } }
@@ -50,7 +51,9 @@ async function Ticket({ params }: { params: PageProps<'/qr/[code]'>['params'] })
 
   return (
     <div className="page ticket-page">
-      <p className="kicker">{ticket.kind === 'invitacion' ? 'Invitación sin cargo' : 'Entrada'}</p>
+      <p className="kicker">
+        {ticket.kind === 'invitacion' ? 'Invitación sin cargo' : ticket.kind === 'rrpp' ? 'QR de RRPP · intransferible' : 'Entrada'}
+      </p>
       <h1 className="page-title">{ticket.event_name}</h1>
       <p className="ticket-when">
         {formatLongDay(ticket.event_starts_at)} · {formatTime(ticket.event_starts_at)} h

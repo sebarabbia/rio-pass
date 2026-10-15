@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useActionState, useRef, useState, useTransition, type FormEvent } from 'react'
-import { DEFAULT_ATTENDANCE_POINTS, DEFAULT_RRPP_QUOTA, DEFAULT_SECTORS, DEFAULT_VENUE } from '@/lib/event-defaults'
+import { DEFAULT_ATTENDANCE_POINTS, DEFAULT_RRPP_CAP, DEFAULT_RRPP_QUOTA, DEFAULT_SECTORS, DEFAULT_VENUE } from '@/lib/event-defaults'
 import { compressImage, formatBytes, type CompressedImage } from '@/lib/image'
 import { createClient } from '@/lib/supabase/client'
 import { saveEvent, type EventFormState } from './actions'
@@ -19,6 +19,7 @@ export type EventFormValues = {
   venue: string
   sectors: string
   quota: number
+  cap: number | null
   points: number
   seasonId: string | null
 }
@@ -140,15 +141,21 @@ export function EventForm({ initial, seasons }: { initial?: EventFormValues; sea
 
       <div className="field-row two">
         <div className="field">
-          <label htmlFor="quota">QR sin cargo por RRPP</label>
+          <label htmlFor="quota">QR por RRPP</label>
           <input id="quota" name="quota" type="number" inputMode="numeric" min={0} max={1000} className="input" defaultValue={initial?.quota ?? DEFAULT_RRPP_QUOTA} required />
         </div>
         <div className="field">
-          <label htmlFor="points">Puntos por venir</label>
-          <input id="points" name="points" type="number" inputMode="numeric" min={0} max={1000} className="input" defaultValue={initial?.points ?? DEFAULT_ATTENDANCE_POINTS} required />
+          <label htmlFor="cap">Tope total de QR de RRPP</label>
+          <input id="cap" name="cap" type="number" inputMode="numeric" min={0} max={100000} className="input" defaultValue={initial ? (initial.cap ?? '') : DEFAULT_RRPP_CAP} placeholder="Sin tope" />
         </div>
       </div>
-      <p className="hint">Los puntos se suman al validar el ingreso en la puerta (una vez por persona). Una fecha especial puede valer más.</p>
+      <p className="hint">Los QR por RRPP incluyen el suyo. Al llegar al tope (propios + regalados), nadie puede regalar más. Vacío = sin tope.</p>
+
+      <div className="field">
+        <label htmlFor="points">Puntos por venir</label>
+        <input id="points" name="points" type="number" inputMode="numeric" min={0} max={1000} className="input" defaultValue={initial?.points ?? DEFAULT_ATTENDANCE_POINTS} required />
+        <p className="hint">Se suman al validar el ingreso en la puerta (una vez por persona). Una fecha especial puede valer más.</p>
+      </div>
 
       <div className="field">
         <label htmlFor="seasonId">Temporada</label>

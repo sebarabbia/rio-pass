@@ -126,7 +126,8 @@ function EventItem({ event }: { event: PanelEvent }) {
         ))}
       </dl>
       <div className="admin-event-actions">
-        <Link href={`/organizador/eventos/${event.id}/invitaciones`} className="btn btn-primary btn-sm">Invitaciones</Link>
+        <Link href={`/organizador/eventos/${event.id}/rrpp`} className="btn btn-primary btn-sm">RRPP</Link>
+        <Link href={`/organizador/eventos/${event.id}/invitaciones`} className="btn btn-secondary btn-sm">QR</Link>
         <Link href={`/organizador/eventos/${event.id}`} className="btn btn-secondary btn-sm">Editar</Link>
         <ActionForm action={setEventStatus} success={published ? `${event.name} pasó a borrador` : `${event.name} ya está en la web`}>
           <input type="hidden" name="id" value={event.id} />

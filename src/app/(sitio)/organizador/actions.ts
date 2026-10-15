@@ -33,6 +33,8 @@ export async function saveEvent(_prev: EventFormState, formData: FormData): Prom
   const sectors = parseSectors(String(formData.get('sectors') ?? ''))
   const quota = Number(formData.get('quota'))
   const points = Number(formData.get('points'))
+  const capRaw = String(formData.get('cap') ?? '').trim()
+  const cap = capRaw === '' ? null : Number(capRaw)
   const seasonId = String(formData.get('seasonId') ?? '') || null
   const status = String(formData.get('status') ?? 'borrador') as EventStatus
   const newFlyer = String(formData.get('flyerPath') ?? '') || null
@@ -43,7 +45,8 @@ export async function saveEvent(_prev: EventFormState, formData: FormData): Prom
   if (endTime && !TIME_RE.test(endTime)) return { error: 'La hora de cierre no es válida.' }
   if (venue.length < 2 || venue.length > 120) return { error: 'Completá el lugar del evento.' }
   if (description.length > 4000) return { error: 'La descripción es demasiado larga (máximo 4000 caracteres).' }
-  if (!Number.isInteger(quota) || quota < 0 || quota > 1000) return { error: 'El cupo por RRPP tiene que ser un número entre 0 y 1000.' }
+  if (!Number.isInteger(quota) || quota < 0 || quota > 1000) return { error: 'Los QR por RRPP tienen que ser un número entre 0 y 1000.' }
+  if (cap !== null && (!Number.isInteger(cap) || cap < 0 || cap > 100000)) return { error: 'El tope total tiene que ser un número (o dejalo vacío para no tener tope).' }
   if (!Number.isInteger(points) || points < 0 || points > 1000) return { error: 'Los puntos por venir tienen que ser un número entre 0 y 1000.' }
   if (seasonId && !UUID_RE.test(seasonId)) return { error: 'Temporada inválida.' }
   if (!STATUSES.includes(status)) return { error: 'Estado inválido.' }
@@ -67,6 +70,7 @@ export async function saveEvent(_prev: EventFormState, formData: FormData): Prom
     season_id: seasonId,
     rrpp_invite_quota: quota,
     attendance_points: points,
+    rrpp_total_cap: cap,
   }
 
   let eventId = id

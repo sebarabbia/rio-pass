@@ -26,19 +26,10 @@ async function Cards() {
   if (!hasRole(user, 'organizador')) notFound()
 
   const supabase = await createClient()
-  const [{ data: cards }, { data: rrpps }] = await Promise.all([
-    supabase
-      .from('nfc_cards')
-      .select('id, uid, label, status, user_id, last_tap_at, owner:profiles!nfc_cards_user_id_fkey(full_name, email)')
-      .order('created_at', { ascending: false }),
-    supabase.from('user_roles').select('profile:profiles!user_roles_user_id_fkey(id, full_name, email)').eq('role', 'rrpp'),
-  ])
-
-  const people = (rrpps ?? [])
-    .map((r) => r.profile)
-    .filter((p): p is NonNullable<typeof p> => Boolean(p))
-    .map((p) => ({ id: p.id, name: p.full_name || p.email || 'Sin nombre' }))
-    .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+  const { data: cards } = await supabase
+    .from('nfc_cards')
+    .select('id, uid, label, status, user_id, last_tap_at, owner:profiles!nfc_cards_user_id_fkey(full_name, email)')
+    .order('created_at', { ascending: false })
 
   return (
     <div className="page wide">
@@ -46,11 +37,11 @@ async function Cards() {
       <h1 className="page-title">Tarjetas NFC</h1>
       <OrganizerNav current="tarjetas" />
       <p className="muted">
-        Cada tarjeta se reconoce por su número de serie. Asignala a un RRPP y en la puerta va a entrar con solo apoyarla
-        (una vez por noche). Si se pierde, bloqueala.
+        Cada tarjeta se reconoce por su número de serie. Asignala a la cuenta de quien la compró (cliente o RRPP) y en la
+        puerta entra con solo apoyarla, una vez por noche. Si se pierde, bloqueala.
       </p>
 
-      <CardForm people={people} />
+      <CardForm />
 
       <section className="section-block" aria-labelledby="h-cards">
         <h2 id="h-cards" className="block-title">Tarjetas cargadas ({cards?.length ?? 0})</h2>
@@ -79,17 +70,19 @@ async function Cards() {
                     </div>
                     <span className={`pill ${active ? 'pill-ok' : 'pill-bad'}`}>{active ? 'Activa' : 'Bloqueada'}</span>
                   </div>
-                  <ActionForm action={assignCard} className="assign-row" success="Asignación guardada">
+                  <ActionForm action={assignCard} className="assign-row" success="Asignación guardada" error="No hay ninguna cuenta con ese email.">
                     <input type="hidden" name="cardId" value={card.id} />
-                    <select name="userId" className="input" defaultValue={card.user_id ?? ''} aria-label="Asignar a">
-                      <option value="">Sin asignar</option>
-                      {card.user_id && !people.some((p) => p.id === card.user_id) && (
-                        <option value={card.user_id}>{ownerName ?? 'Usuario actual'}</option>
-                      )}
-                      {people.map((p) => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </select>
+                    <input
+                      name="email"
+                      type="email"
+                      inputMode="email"
+                      className="input"
+                      defaultValue={card.owner?.email ?? ''}
+                      placeholder="Email (vacío = sin asignar)"
+                      autoComplete="off"
+                      autoCapitalize="none"
+                      aria-label="Asignar a (email)"
+                    />
                     <button type="submit" className="btn btn-secondary btn-sm">Asignar</button>
                   </ActionForm>
                   <div className="invitation-actions">

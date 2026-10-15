@@ -8,6 +8,15 @@ import { requireOrganizer } from '@/lib/organizer'
 export type CardFormState = { error?: string; message?: string }
 
 const UUID_RE = /^[0-9a-f-]{36}$/
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+type Supabase = Awaited<ReturnType<typeof requireOrganizer>>
+
+/** Cuenta con ese email (las tarjetas se asignan a cualquier persona: se venden a clientes). */
+async function findUserByEmail(supabase: Supabase, email: string) {
+  const { data } = await supabase.from('profiles').select('id').ilike('email', email).maybeSingle()
+  return data?.id ?? null
+}
 
 export async function createCard(_prev: CardFormState, formData: FormData): Promise<CardFormState> {
   const supabase = await requireOrganizer()
@@ -15,10 +24,12 @@ export async function createCard(_prev: CardFormState, formData: FormData): Prom
 
   const uid = normalizeUid(String(formData.get('uid') ?? ''))
   const label = String(formData.get('label') ?? '').trim().slice(0, 40) || null
-  const userId = String(formData.get('userId') ?? '')
+  const email = String(formData.get('email') ?? '').trim().toLowerCase()
 
   if (!uid) return { error: 'Número de tarjeta inválido. Apoyala con NFC o escribilo en hexadecimal (ej. 04:91:58:0A:8C:19:90).' }
-  if (userId && !UUID_RE.test(userId)) return { error: 'Usuario inválido.' }
+  if (email && !EMAIL_RE.test(email)) return { error: 'Ese email no parece válido.' }
+  const userId = email ? await findUserByEmail(supabase, email) : null
+  if (email && !userId) return { error: 'No hay ninguna cuenta con ese email. La persona tiene que registrarse primero.' }
 
   const now = new Date().toISOString()
   const { error } = await supabase.from('nfc_cards').insert({
@@ -39,8 +50,11 @@ export async function assignCard(formData: FormData) {
   const supabase = await requireOrganizer()
   const me = await getCurrentUser()
   const cardId = String(formData.get('cardId') ?? '')
-  const userId = String(formData.get('userId') ?? '')
-  if (!UUID_RE.test(cardId) || (userId && !UUID_RE.test(userId))) return
+  const email = String(formData.get('email') ?? '').trim().toLowerCase()
+  if (!UUID_RE.test(cardId)) throw new Error('Tarjeta inválida')
+  if (email && !EMAIL_RE.test(email)) throw new Error('Email inválido')
+  const userId = email ? await findUserByEmail(supabase, email) : null
+  if (email && !userId) throw new Error('No hay ninguna cuenta con ese email')
 
   await supabase
     .from('nfc_cards')

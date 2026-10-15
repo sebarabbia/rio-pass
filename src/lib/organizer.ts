@@ -37,3 +37,16 @@ export async function syncSectors(supabase: Supabase, eventId: string, names: st
     }
   }
 }
+
+/** Organizadores (para elegir responsable de RRPP y filtrar), ordenados por nombre. */
+export async function getOrganizers(supabase: Supabase) {
+  const { data } = await supabase
+    .from('user_roles')
+    .select('profile:profiles!user_roles_user_id_fkey(id, full_name, email)')
+    .eq('role', 'organizador')
+  return (data ?? [])
+    .map((r) => r.profile)
+    .filter((p): p is NonNullable<typeof p> => Boolean(p))
+    .map((p) => ({ id: p.id, name: p.full_name || p.email || 'Sin nombre' }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+}

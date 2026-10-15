@@ -7,11 +7,13 @@ import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser, ROLE_LABELS, type AppRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { OrganizerNav } from '../OrganizerNav'
-import { toggleRole } from './actions'
+import { setProfile } from './actions'
 
 export const metadata: Metadata = { title: 'Usuarios' }
 
-const ASSIGNABLE: AppRole[] = ['rrpp', 'acreditador', 'barra', 'organizador']
+// Cada persona tiene un solo perfil. Todos conservan lo de cliente (QR y puntos).
+const PROFILES: AppRole[] = ['cliente', 'rrpp', 'acreditador', 'organizador']
+const PROFILE_PILL: Record<string, string> = { cliente: 'pill-muted', rrpp: 'pill-ok', acreditador: 'pill-ok', organizador: 'pill-ok', barra: 'pill-ok' }
 
 export default function UsersPage({ searchParams }: PageProps<'/organizador/usuarios'>) {
   return (
@@ -19,6 +21,10 @@ export default function UsersPage({ searchParams }: PageProps<'/organizador/usua
       <Users searchParams={searchParams} />
     </Suspense>
   )
+}
+
+function profileOf(roles: { role: AppRole }[]): AppRole {
+  return roles.find((r) => r.role !== 'cliente')?.role ?? 'cliente'
 }
 
 async function Users({ searchParams }: { searchParams: PageProps<'/organizador/usuarios'>['searchParams'] }) {
@@ -29,7 +35,7 @@ async function Users({ searchParams }: { searchParams: PageProps<'/organizador/u
   const rawQuery = typeof params.q === 'string' ? params.q : ''
   // Se sacan caracteres que tienen significado en los filtros de la API.
   const q = rawQuery.replace(/[,()%*\\]/g, ' ').trim().slice(0, 60)
-  const roleFilter = typeof params.rol === 'string' && ASSIGNABLE.includes(params.rol as AppRole) ? (params.rol as AppRole) : null
+  const profileFilter = typeof params.rol === 'string' && PROFILES.includes(params.rol as AppRole) ? (params.rol as AppRole) : null
 
   const supabase = await createClient()
   let query = supabase
@@ -37,10 +43,14 @@ async function Users({ searchParams }: { searchParams: PageProps<'/organizador/u
     .select('id, full_name, email, phone, created_at, user_roles!user_roles_user_id_fkey(role)')
     .order('created_at', { ascending: false })
     .limit(50)
-  if (q) query = query.or(`full_name.ilike.%${q}%,email.ilike.%${q}%`)
-  if (roleFilter) {
-    // Filtrar por rol sin perder los demás roles de cada usuario en el listado.
-    const { data: withRole } = await supabase.from('user_roles').select('user_id').eq('role', roleFilter)
+  if (q) query = query.or(`full_name.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%`)
+  if (profileFilter === 'cliente') {
+    // Clientes = los que no tienen otro perfil.
+    const { data: staff } = await supabase.from('user_roles').select('user_id').neq('role', 'cliente')
+    const ids = (staff ?? []).map((r) => r.user_id)
+    if (ids.length) query = query.not('id', 'in', `(${ids.join(',')})`)
+  } else if (profileFilter) {
+    const { data: withRole } = await supabase.from('user_roles').select('user_id').eq('role', profileFilter)
     query = query.in('id', (withRole ?? []).map((r) => r.user_id))
   }
   const { data: users, error } = await query
@@ -50,12 +60,16 @@ async function Users({ searchParams }: { searchParams: PageProps<'/organizador/u
       <p className="kicker">Panel de organizador</p>
       <h1 className="page-title">Usuarios</h1>
       <OrganizerNav current="usuarios" />
+      <p className="muted">
+        Cada persona tiene un solo perfil. RRPP, acreditadores y organizadores también ven lo de cliente (sus QR y puntos). Para
+        cargar muchos RRPP juntos, usá la pestaña <Link href="/organizador/rrpp">RRPP</Link>.
+      </p>
 
       <form className="search" role="search">
-        <input name="q" type="search" className="input" placeholder="Buscar por nombre o email" defaultValue={rawQuery} aria-label="Buscar usuarios" />
-        <select name="rol" className="input" defaultValue={roleFilter ?? ''} aria-label="Filtrar por rol">
+        <input name="q" type="search" className="input" placeholder="Buscar por nombre, email o celular" defaultValue={rawQuery} aria-label="Buscar usuarios" />
+        <select name="rol" className="input" defaultValue={profileFilter ?? ''} aria-label="Filtrar por perfil">
           <option value="">Todos</option>
-          {ASSIGNABLE.map((r) => (
+          {PROFILES.map((r) => (
             <option key={r} value={r}>{ROLE_LABELS[r]}</option>
           ))}
         </select>
@@ -72,37 +86,29 @@ async function Users({ searchParams }: { searchParams: PageProps<'/organizador/u
 
       <ul className="list admin-grid">
         {users?.map((u) => {
-          const roles = new Set(u.user_roles.map((r) => r.role))
+          const profile = profileOf(u.user_roles)
+          const isMe = u.id === me.id
           return (
             <li key={u.id} className="card user-card">
-              <div>
-                <p className="card-title">{u.full_name || 'Sin nombre'}</p>
-                <p className="muted small">{[u.email, u.phone].filter(Boolean).join(' · ')}</p>
-                <Link href={`/organizador/puntos/${u.id}`} className="link-hint">Puntos →</Link>
+              <div className="row">
+                <div className="invitation-info">
+                  <p className="card-title">{u.full_name || 'Sin nombre'}</p>
+                  <p className="muted small">{[u.email, u.phone].filter(Boolean).join(' · ')}</p>
+                  <Link href={`/organizador/puntos/${u.id}`} className="link-hint">Puntos →</Link>
+                </div>
+                <span className={`pill ${PROFILE_PILL[profile]}`}>{ROLE_LABELS[profile]}</span>
               </div>
-              <div className="role-toggles" aria-label={`Roles de ${u.full_name}`}>
-                {ASSIGNABLE.map((role) => {
-                  const active = roles.has(role)
-                  const locked = u.id === me.id && role === 'organizador'
-                  return (
-                    <ActionForm key={role} action={toggleRole} success={`${ROLE_LABELS[role]}: ${active ? 'quitado' : 'asignado'} a ${u.full_name || 'este usuario'}`}>
-                      <input type="hidden" name="userId" value={u.id} />
-                      <input type="hidden" name="role" value={role} />
-                      <input type="hidden" name="enable" value={active ? '0' : '1'} />
-                      <button
-                        type="submit"
-                        className={`role-toggle${active ? ' is-on' : ''}`}
-                        aria-pressed={active}
-                        disabled={locked}
-                        title={locked ? 'No podés quitarte tu propio rol de organizador' : undefined}
-                      >
-                        {active ? '✓ ' : '+ '}
-                        {ROLE_LABELS[role]}
-                      </button>
-                    </ActionForm>
-                  )
-                })}
-              </div>
+              <ActionForm action={setProfile} success={`${u.full_name || 'Usuario'}: perfil actualizado`} error="No se pudo cambiar el perfil." className="assign-row">
+                <input type="hidden" name="userId" value={u.id} />
+                <select name="profile" className="input" defaultValue={profile} disabled={isMe} aria-label={`Perfil de ${u.full_name}`}>
+                  {PROFILES.map((r) => (
+                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                  ))}
+                </select>
+                <button type="submit" className="btn btn-secondary btn-sm" disabled={isMe} title={isMe ? 'No podés cambiar tu propio perfil' : undefined}>
+                  Cambiar
+                </button>
+              </ActionForm>
             </li>
           )
         })}

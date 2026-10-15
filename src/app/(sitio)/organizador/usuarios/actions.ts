@@ -1,29 +1,26 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
-import { getCurrentUser, hasRole, type AppRole } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/server'
+import type { AppRole } from '@/lib/auth'
+import { requireOrganizer } from '@/lib/organizer'
 
-const ASSIGNABLE: AppRole[] = ['rrpp', 'acreditador', 'barra', 'organizador']
+const PROFILES: AppRole[] = ['cliente', 'rrpp', 'acreditador', 'organizador']
+const UUID_RE = /^[0-9a-f-]{36}$/
 
-export async function toggleRole(formData: FormData) {
-  const me = await getCurrentUser()
-  if (!me) redirect('/ingresar?next=/organizador/usuarios')
-  if (!hasRole(me, 'organizador')) throw new Error('Solo un organizador puede cambiar roles.')
+const ERRORS: Record<string, string> = {
+  no_podes_quitarte: 'No podés quitarte tu propio perfil de organizador.',
+  usuario_inexistente: 'Ese usuario ya no existe.',
+}
 
+/** Cambia el perfil de una persona: cada uno tiene uno solo (y todos conservan lo de cliente). */
+export async function setProfile(formData: FormData) {
+  const supabase = await requireOrganizer()
   const userId = String(formData.get('userId') ?? '')
-  const role = String(formData.get('role') ?? '') as AppRole
-  const enable = formData.get('enable') === '1'
-  if (!userId || !ASSIGNABLE.includes(role)) return
-  // Evita quedarse sin acceso al panel por error.
-  if (userId === me.id && role === 'organizador' && !enable) return
+  const profile = String(formData.get('profile') ?? '') as AppRole
+  if (!UUID_RE.test(userId) || !PROFILES.includes(profile)) throw new Error('Datos inválidos')
 
-  const supabase = await createClient()
-  if (enable) {
-    await supabase.from('user_roles').upsert({ user_id: userId, role }, { onConflict: 'user_id,role', ignoreDuplicates: true })
-  } else {
-    await supabase.from('user_roles').delete().eq('user_id', userId).eq('role', role)
-  }
+  const { error } = await supabase.rpc('set_user_profile', { _user_id: userId, _profile: profile })
+  if (error) throw new Error(ERRORS[error.message] ?? 'No se pudo cambiar el perfil.')
   revalidatePath('/organizador/usuarios')
+  revalidatePath('/organizador/rrpp')
 }

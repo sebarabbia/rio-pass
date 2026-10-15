@@ -27,17 +27,23 @@ Esquema completo con RLS, registro e inicio de sesión, web pública de eventos,
 ## Auditoría UX/UI (hecha)
 Recuperar y cambiar contraseña, vista previa con flyer en los links de WhatsApp, consejo de sacar captura al QR, home más compacta con botones según la sesión, "Tu próxima entrada" en Mi cuenta, RRPP con compartir nativo, panel de eventos con próximas/anteriores y números por noche, búsqueda por nombre y aviso de fecha en la puerta, compartir y "Cómo llegar" en cada evento, avisos "Listo" en el panel, textos de 12 px mínimo, panel más ancho en compu y app instalable (sitio y puerta).
 
-## Etapa 5: Tarjetas NTAG 424 DNA
+## Etapa 5: RRPP a escala y perfiles (hecha)
+- Un solo perfil por persona (cliente, RRPP, acreditador, organizador); todos ven lo de cliente.
+- Alta masiva de RRPP con su organizador responsable; cada organizador ve por defecto su grupo.
+- Habilitación de QR por fecha después de la primera difusión, QR propio intransferible, QR extra, tope total por fecha (1000) y email obligatorio con creación automática de cuenta.
+- Puerta en azul para RRPP; contador público de QR entregados en cada fecha; tarjetas NFC asignables a cualquier cliente.
+
+## Etapa 6: Tarjetas NTAG 424 DNA (para vender a clientes)
 - Programar las tarjetas con SUN/SDM: al apoyarlas abren `https://…/t?picc=…&cmac=…`.
 - Verificar del lado del servidor (Route Handler o Edge Function): descifrar el UID y el contador, validar el CMAC con claves diversificadas a partir de una clave maestra guardada como secreto (nunca en la base) y rechazar contadores repetidos (`last_counter`).
 - Alta, asignación y bloqueo desde el panel.
 - El tap muestra el pase del RRPP. Abrir la sesión completa solo con el tap tiene riesgos (tarjeta perdida = cuenta abierta), así que conviene que el tap muestre el pase y que la cuenta siga pidiendo contraseña en dispositivos nuevos.
 
-## Etapa 6: Venta de entradas con Mercado Pago
+## Etapa 7: Venta de entradas (y tarjetas) con Mercado Pago
 - `ticket_types` con precio y cupo. La compra crea `orders` + `order_items` y una preferencia de Checkout Pro.
 - Webhook de Mercado Pago (servidor, service role) → `payments` → cuando el pago queda aprobado, se emiten `tickets` con `order_id`.
 
-## Etapa 7 (opcional): Bebidas y barra exprés
+## Etapa 8 (opcional): Bebidas y barra exprés
 - Carta (`products`) y compra con Mercado Pago, igual que las entradas. El pedido pagado genera un `pickup_code` (QR).
 - Rol barra: lista de pedidos pagados del evento; marcar como entregado (ya habilitado por RLS solo para ese cambio).
 - Sumar puntos por compra (`points_ledger`, reason `compra`).

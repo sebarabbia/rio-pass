@@ -4,7 +4,7 @@ import { useActionState } from 'react'
 import { requestPasswordReset, type AuthFormState } from '@/app/auth/actions'
 import { SubmitButton } from '@/components/SubmitButton'
 
-export function RecoverForm() {
+export function RecoverForm({ submitLabel = 'Mandarme el link' }: { submitLabel?: string }) {
   const [state, formAction] = useActionState<AuthFormState, FormData>(requestPasswordReset, {})
 
   if (state.message) {
@@ -23,7 +23,7 @@ export function RecoverForm() {
         <input id="email" name="email" type="email" className="input" autoComplete="email" inputMode="email" defaultValue={state.fields?.email} required />
       </div>
       {state.error && <p className="form-error" role="alert">{state.error}</p>}
-      <SubmitButton pendingText="Enviando…">Mandarme el link</SubmitButton>
+      <SubmitButton pendingText="Enviando…">{submitLabel}</SubmitButton>
     </form>
   )
 }

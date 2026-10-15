@@ -142,6 +142,7 @@ export type Database = {
       }
       events: {
         Row: {
+          rrpp_total_cap: number | null
           attendance_points: number
           capacity: number | null
           created_at: string
@@ -161,6 +162,7 @@ export type Database = {
           venue: string
         }
         Insert: {
+          rrpp_total_cap?: number | null
           attendance_points?: number
           capacity?: number | null
           created_at?: string
@@ -180,6 +182,7 @@ export type Database = {
           venue?: string
         }
         Update: {
+          rrpp_total_cap?: number | null
           attendance_points?: number
           capacity?: number | null
           created_at?: string
@@ -588,6 +591,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          manager_id: string | null
           avatar_path: string | null
           created_at: string
           email: string | null
@@ -597,6 +601,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          manager_id?: string | null
           avatar_path?: string | null
           created_at?: string
           email?: string | null
@@ -606,6 +611,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          manager_id?: string | null
           avatar_path?: string | null
           created_at?: string
           email?: string | null
@@ -613,6 +619,41 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rrpp_event_access: {
+        Row: {
+          enabled: boolean
+          event_id: string
+          extra: number
+          rrpp_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          event_id: string
+          extra?: number
+          rrpp_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          event_id?: string
+          extra?: number
+          rrpp_id?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -701,6 +742,7 @@ export type Database = {
       }
       tickets: {
         Row: {
+          rrpp_id: string | null
           code: string
           created_at: string
           event_id: string
@@ -719,6 +761,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          rrpp_id?: string | null
           code?: string
           created_at?: string
           event_id: string
@@ -737,6 +780,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          rrpp_id?: string | null
           code?: string
           created_at?: string
           event_id?: string
@@ -781,6 +825,13 @@ export type Database = {
             columns: ["ticket_type_id"]
             isOneToOne: false
             referencedRelation: "ticket_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_rrpp_id_fkey"
+            columns: ["rrpp_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -853,7 +904,39 @@ export type Database = {
         }[]
       }
       door_stats: { Args: { _event_id: string }; Returns: Json }
+      event_going_counts: {
+        Args: { _event_ids: string[] }
+        Returns: { event_id: string; going: number }[]
+      }
+      event_rrpp_board: {
+        Args: { _event_id: string }
+        Returns: {
+          email: string | null
+          enabled: boolean
+          extra: number
+          full_name: string
+          issued: number
+          manager_id: string | null
+          manager_name: string | null
+          phone: string | null
+          rrpp_id: string
+          used: number
+        }[]
+      }
       my_ranking: { Args: { _season_id?: string }; Returns: Json }
+      rrpp_event_status: {
+        Args: never
+        Returns: {
+          cap: number | null
+          cap_used: number
+          enabled: boolean
+          event_id: string
+          manager_name: string | null
+          pass_code: string | null
+          quota: number
+          used: number
+        }[]
+      }
       search_door_guests: {
         Args: { _event_id: string; _query: string }
         Returns: {
@@ -875,6 +958,18 @@ export type Database = {
           points: number
           pos: number
         }[]
+      }
+      set_rrpp_access: {
+        Args: { _enabled: boolean; _event_id: string; _extra?: number; _rrpp_ids: string[] }
+        Returns: number
+      }
+      set_rrpp_manager: {
+        Args: { _manager_id: string | null; _rrpp_ids: string[] }
+        Returns: number
+      }
+      set_user_profile: {
+        Args: { _profile: Database["public"]["Enums"]["app_role"]; _user_id: string }
+        Returns: undefined
       }
       validate_access: {
         Args: {
@@ -955,7 +1050,7 @@ export type Database = {
       points_reason: "asistencia" | "compra" | "ajuste" | "premio"
       scan_method: "qr" | "nfc" | "manual"
       scan_result: "permitido" | "rechazado"
-      ticket_kind: "entrada" | "invitacion"
+      ticket_kind: "entrada" | "invitacion" | "rrpp"
       ticket_status: "valido" | "usado" | "anulado"
     }
     CompositeTypes: {
@@ -1106,7 +1201,7 @@ export const Constants = {
       points_reason: ["asistencia", "compra", "ajuste", "premio"],
       scan_method: ["qr", "nfc", "manual"],
       scan_result: ["permitido", "rechazado"],
-      ticket_kind: ["entrada", "invitacion"],
+      ticket_kind: ["entrada", "invitacion", "rrpp"],
       ticket_status: ["valido", "usado", "anulado"],
     },
   },

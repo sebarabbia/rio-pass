@@ -5,10 +5,9 @@ import { SubmitButton } from '@/components/SubmitButton'
 import { nfcErrorMessage, nfcSupported, normalizeUid, startNfcScan } from '@/lib/nfc'
 import { createCard, type CardFormState } from './actions'
 
-type Person = { id: string; name: string }
 const noopSubscribe = () => () => {}
 
-export function CardForm({ people }: { people: Person[] }) {
+export function CardForm() {
   const [state, formAction] = useActionState<CardFormState, FormData>(createCard, {})
   const canNfc = useSyncExternalStore(noopSubscribe, nfcSupported, () => false)
   const [scanning, setScanning] = useState(false)
@@ -85,14 +84,11 @@ export function CardForm({ people }: { people: Person[] }) {
         <input id="card-label" name="label" className="input" maxLength={40} placeholder="N° 001" />
       </div>
       <div className="field">
-        <label htmlFor="card-user">Asignar a</label>
-        <select id="card-user" name="userId" className="input" defaultValue="">
-          <option value="">Sin asignar por ahora</option>
-          {people.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-        <p className="hint">Aparecen los usuarios con rol RRPP. Asignalo en Usuarios si no está.</p>
+        <label htmlFor="card-email">
+          Asignar a <span className="optional">(email de su cuenta, opcional)</span>
+        </label>
+        <input id="card-email" name="email" type="email" inputMode="email" className="input" autoComplete="off" autoCapitalize="none" placeholder="cliente@gmail.com" />
+        <p className="hint">Cualquier cuenta: cliente o RRPP. Si la vendés después, dejalo vacío y asignala cuando la compren.</p>
       </div>
       {state.error && <p className="form-error" role="alert">{state.error}</p>}
       {state.message && <p className="form-ok" role="status">{state.message}</p>}

@@ -16,7 +16,13 @@ export function whatsappNumber(phone: string | null | undefined) {
 
 export function invitationMessage({ holderName, eventName, when, url }: { holderName: string; eventName: string; when: string; url: string }) {
   const name = holderName.trim().split(/\s+/)[0]
-  return `¡Hola ${name}! Te dejo tu QR sin cargo para ${eventName} (${when}) en Rio.\n${url}\nAbrilo y sacale una captura (en la playa a veces no hay señal). Mostralo en la puerta.`
+  const origin = new URL(url).origin
+  return [
+    `¡Hola ${name}! Te dejo tu QR sin cargo para ${eventName} (${when}) en Rio.`,
+    url,
+    'Abrilo y sacale una captura (en la playa a veces no hay señal). Mostralo en la puerta.',
+    `Tu QR también queda en tu cuenta de Rio Pass: activala con tu email en ${origin}/activar y sumá puntos cada noche.`,
+  ].join('\n')
 }
 
 export function whatsappLink(phone: string | null | undefined, text: string) {

@@ -409,6 +409,7 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .door-log-mark { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; font-weight: 900; font-size: 0.85rem; }
 .door-log.is-ok .door-log-mark { background: var(--ok-soft); color: var(--ok-text); }
 .door-log.is-bad .door-log-mark { background: var(--bad-soft); color: var(--bad-text); }
+.door-log.is-rrpp .door-log-mark { background: rgba(96, 140, 255, 0.18); color: #9db8ff; }
 .door-log-body { flex: 1; min-width: 0; }
 .door-log-main { font-weight: 700; overflow-wrap: anywhere; }
 .door-log-time { flex: none; color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
@@ -429,6 +430,7 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 }
 .door-result.is-ok { background: #138a4e; }
 .door-result.is-bad { background: #c62828; }
+.door-result.is-rrpp { background: #1d4ed8; } /* RRPP: azul, para distinguirlos de un vistazo */
 .door-result-logo { width: 64px; height: auto; opacity: 0.85; }
 .door-result-inner { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; width: 100%; animation: door-pop 0.2s ease-out; }
 @keyframes door-pop { from { transform: scale(0.95); opacity: 0.5; } }
@@ -589,3 +591,21 @@ body:has(.page.wide) .topbar-inner { max-width: 1040px; }
 .guest-info { min-width: 0; }
 .guest-name { font-weight: 700; overflow-wrap: anywhere; }
 .guest-row .btn, .guest-row .pill { flex: none; white-space: nowrap; }
+
+/* ---------------------------------------------------------------- RRPP a escala */
+.event-going { margin-top: 4px; color: var(--warn-text); font-weight: 700; font-size: 0.9rem; }
+.event-going.is-big { margin: 0; padding: 10px 14px; border-radius: 12px; background: rgba(246, 227, 184, 0.1); font-size: 1rem; }
+.rrpp-pass { border-color: #6f8fff; }
+.rrpp-pass .kicker { color: #b9c9ff; }
+.cap-card { display: grid; gap: 8px; }
+.cap-line strong { font-family: var(--serif); font-size: 1.6rem; font-variant-numeric: lining-nums; }
+.rrpp-row { display: grid; gap: 10px; }
+.rrpp-row.is-enabled { border-color: rgba(134, 227, 173, 0.35); }
+.rrpp-row .quota-text a { color: inherit; }
+@media (min-width: 640px) { .search.search-wide { grid-template-columns: 1fr 180px 160px auto; } }
+.bulk-details > summary { cursor: pointer; list-style: none; }
+.bulk-details > summary::-webkit-details-marker { display: none; }
+.bulk-details[open] > summary { margin-bottom: 14px; }
+.bulk-details .form-card { padding: 0; border: 0; background: none; }
+.bulk-results { display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px; background: var(--surface-strong); }
+.bulk-problems { gap: 4px; }

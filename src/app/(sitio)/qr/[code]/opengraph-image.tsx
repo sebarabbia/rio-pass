@@ -15,7 +15,7 @@ export default async function Image({ params }: { params: Promise<{ code: string
   const ticket = data?.[0]
   if (!ticket) return renderOgCard({ kicker: 'Rio Pass', title: 'Las noches de Rio' })
   return renderOgCard({
-    kicker: ticket.kind === 'invitacion' ? 'Invitación sin cargo' : 'Entrada',
+    kicker: ticket.kind === 'invitacion' ? 'Invitación sin cargo' : ticket.kind === 'rrpp' ? 'QR de RRPP' : 'Entrada',
     title: ticket.event_name,
     lines: [
       ...(ticket.holder_name ? [`Para ${ticket.holder_name}`] : []),

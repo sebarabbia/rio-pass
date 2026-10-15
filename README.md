@@ -29,12 +29,13 @@ src/app/
     qr/[code]/               Pantalla del QR que recibe el invitado (link de WhatsApp)
     ranking/                 Ranking de la temporada (top 10 con premio, tu puesto)
     registro/, ingresar/     Alta e inicio de sesión (email + contraseña)
-    recuperar/               "¿Olvidaste tu contraseña?" (manda el mail)
+    recuperar/, activar/     Recuperar contraseña o activar una cuenta creada por Rio (manda el mail)
     cuenta/contrasena/       Elegir contraseña nueva (desde el mail o desde Mi cuenta)
     cuenta/                  Perfil: datos, Mis QR, Mis puntos (y Mis tarjetas si tiene)
     rrpp/                    Panel RRPP: fechas, cupo, generar y compartir QR sin cargo
-    organizador/             Panel: eventos, invitaciones, usuarios y roles, tarjetas NFC,
-                             puntos y ranking, temporadas, fechas de ejemplo
+    organizador/             Panel: eventos (QR y RRPP por fecha), RRPP (alta masiva y
+                             responsables), usuarios y perfiles, tarjetas NFC, puntos y
+                             ranking, temporadas
 ```
 
 ## Correrlo localmente
@@ -65,22 +66,38 @@ Las migraciones en `supabase/migrations/` ya están aplicadas al proyecto `rio-p
   - `my_ranking`: puntos, puesto y distancia al top 10 del usuario logueado.
   - `admin_season_ranking`: ranking con nombre completo y contacto, solo organizador.
   - `search_door_guests`: busca QR de un evento por nombre del titular, solo acreditador u organizador.
+  - `set_user_profile`, `set_rrpp_manager`, `set_rrpp_access`, `event_rrpp_board`: perfiles, responsables y habilitación de RRPP (organizador).
+  - `rrpp_event_status`: estado del RRPP en cada fecha (habilitado, cupo, tope, su QR).
+  - `event_going_counts`: contador público de QR entregados por fecha.
+- **Edge Function `cuentas`** (`supabase/functions/cuentas`): crea cuentas sin contraseña (QR regalados a emails nuevos y alta masiva de RRPP). Verifica por dentro la sesión y el perfil de quien llama.
 - Auxiliares en el esquema `private` (no expuesto por la API).
 
-## Invitaciones QR (Etapa 2)
+## Perfiles
 
-1. El organizador marca a alguien como **RRPP** en Panel → Usuarios.
-2. El RRPP entra a **/rrpp**, elige la fecha, carga nombre (y opcionalmente celular, email y sector) y toca **Generar QR**.
-3. Comparte por **WhatsApp** el link `/qr/<código>`: ahí el invitado ve su QR, sin necesidad de cuenta. Si cargó un email que tiene cuenta (o se registra después con ese email), el QR también aparece en su "Mis QR".
-4. El QR codifica ese mismo link: la app de puerta (Etapa 3) va a leer el código de ahí.
+Cada persona tiene **una sola cuenta y un solo perfil** (se cambia en Panel → Usuarios). Todos ven lo de cliente (próximas fechas, sus QR, sus puntos) y el perfil suma lo suyo:
 
-Cada fecha tiene un cupo de QR por RRPP (editable en el evento); anular un QR sin usar libera el lugar. El organizador puede emitir y ver todas las invitaciones de un evento en **Panel → Eventos → Invitaciones**.
+| Perfil | Qué suma |
+| --- | --- |
+| Cliente | Nada más: fechas, sus QR, puntos y ranking (a futuro, su tarjeta NFC comprada). |
+| RRPP | Panel RRPP: su QR propio por fecha y QR para regalar. Ranking de RRPP. |
+| Acreditador | La puerta (`/puerta`). |
+| Organizador | Todo el panel, la puerta y QR sin límite. |
+
+## RRPP e invitaciones QR
+
+1. **Alta:** Panel → RRPP → *Cargar RRPP*: se pega la lista de Excel/Sheets (nombre, email, celular). Se crea la cuenta de cada uno (Edge Function `cuentas`, con la clave de servicio que solo vive en Supabase) y queda a cargo del organizador elegido. Cada RRPP activa su cuenta en **/activar** eligiendo su contraseña.
+2. **Habilitación por fecha:** Panel → Eventos → **RRPP**: cada organizador ve por defecto su grupo y habilita a quienes hicieron la primera difusión (de a uno o todos los de la lista). Al habilitar se crea el **QR propio** del RRPP (intransferible, en su cuenta). Se pueden dar **QR extra** (+1) a quien se lo merece y avisarle por WhatsApp.
+3. **Cupo y tope:** cada RRPP habilitado tiene `events.rrpp_invite_quota` QR (5, incluye el suyo) + extra. La fecha tiene un **tope total** (`events.rrpp_total_cap`, 1000): al llegar, nadie puede regalar más. Los QR de los organizadores no tienen límite ni cuentan para el tope. Todo se valida en la base (`issue_invitation`, con bloqueo por fecha).
+4. **Regalar un QR:** nombre y **email obligatorios** (una persona, un QR por fecha). Si el email no tiene cuenta, se le crea una y el QR queda ahí; la persona la activa en /activar. Se comparte por WhatsApp u otra app con el link `/qr/<código>`.
+5. **Control:** Panel → Eventos → **QR**: todos los QR entregados de la fecha, con búsqueda, filtro (organizadores / RRPP / un RRPP) y anulación.
+
+En la web, cada fecha muestra cuántos QR se entregaron ("🔥 N ya tienen su QR", desde 15).
 
 ## Puerta (Etapa 3)
 
 1. El organizador asigna el rol **Acreditador** al personal de puerta (Panel → Usuarios) y carga las tarjetas de los RRPP (Panel → Tarjetas: se pueden leer apoyándolas en un Android con Chrome).
 2. En la puerta se abre **/puerta** desde el celular, se elige la fecha y se toca **Escanear QR** (cámara) o **Leer tarjetas NFC** (solo Chrome en Android). También se puede tipear el código.
-3. Cada lectura muestra pantalla completa verde (con nombre y sector) o roja con el motivo: ya usado (y a qué hora), otra fecha, anulado, QR no válido, tarjeta bloqueada / sin asignar / no reconocida, o ya ingresó esta noche.
+3. Cada lectura muestra pantalla completa verde (con nombre y sector), **azul si es un RRPP**, o roja con el motivo: ya usado (y a qué hora), otra fecha, anulado, QR no válido, tarjeta bloqueada / sin asignar / no reconocida, o ya ingresó esta noche.
 4. Los QR son de un solo uso. Las tarjetas entran una vez por noche (anti-passback). Cada ingreso queda registrado como asistencia, que es la base de los puntos (Etapa 4).
 
 ## Puntos y ranking (Etapa 4)

@@ -29,7 +29,7 @@ async function EditEvent({ params }: { params: PageProps<'/organizador/eventos/[
   const [{ data: event }, { data: seasons }] = await Promise.all([
     supabase
       .from('events')
-      .select('id, name, description, venue, starts_at, ends_at, status, flyer_path, rrpp_invite_quota, attendance_points, season_id, ticket_types(name, sort_order, is_active)')
+      .select('id, name, description, venue, starts_at, ends_at, status, flyer_path, rrpp_invite_quota, rrpp_total_cap, attendance_points, season_id, ticket_types(name, sort_order, is_active)')
       .eq('id', id)
       .maybeSingle(),
     supabase.from('seasons').select('id, name, is_current').order('starts_on', { ascending: false }),
@@ -49,7 +49,10 @@ async function EditEvent({ params }: { params: PageProps<'/organizador/eventos/[
       <p className="kicker">Panel de organizador</p>
       <h1 className="page-title">Editar evento</h1>
       <Link href={`/organizador/eventos/${event.id}/invitaciones`} className="btn btn-secondary btn-block">
-        Invitaciones QR de este evento
+        QR entregados de este evento
+      </Link>
+      <Link href={`/organizador/eventos/${event.id}/rrpp`} className="btn btn-secondary btn-block">
+        Habilitar RRPP de esta fecha
       </Link>
       <EventForm
         seasons={seasons ?? []}
@@ -65,6 +68,7 @@ async function EditEvent({ params }: { params: PageProps<'/organizador/eventos/[
           venue: event.venue,
           sectors,
           quota: event.rrpp_invite_quota,
+          cap: event.rrpp_total_cap,
           points: event.attendance_points,
           seasonId: event.season_id,
         }}

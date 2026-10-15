@@ -21,7 +21,7 @@ export default function AccountPage() {
   )
 }
 
-const TICKET_KIND = { entrada: 'Entrada', invitacion: 'Invitación' } as const
+const TICKET_KIND = { entrada: 'Entrada', invitacion: 'Invitación', rrpp: 'QR de RRPP' } as const
 const TICKET_STATUS = { valido: 'Válido', usado: 'Usado', anulado: 'Anulado' } as const
 
 async function Account() {
@@ -184,7 +184,7 @@ async function Account() {
 
 type TicketRow = {
   id: string
-  kind: 'entrada' | 'invitacion'
+  kind: 'entrada' | 'invitacion' | 'rrpp'
   status: 'valido' | 'usado' | 'anulado'
   code: string
   ticket_types: { name: string } | null

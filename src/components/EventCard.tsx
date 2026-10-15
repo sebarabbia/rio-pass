@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Logo } from '@/components/Logo'
-import { flyerUrl, type PublicEvent } from '@/lib/events'
+import { flyerUrl, GOING_MIN, type PublicEvent } from '@/lib/events'
 import { formatShortDay, formatTime } from '@/lib/format'
 
 export function EventCard({ event }: { event: PublicEvent }) {
@@ -24,6 +24,7 @@ export function EventCard({ event }: { event: PublicEvent }) {
           </p>
           <h3 className="event-name">{event.name}</h3>
           <p className="event-venue">{event.venue}</p>
+          {event.going >= GOING_MIN && <p className="event-going">🔥 {event.going} ya tienen su QR</p>}
         </div>
       </Link>
     </li>

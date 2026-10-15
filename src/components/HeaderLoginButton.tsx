@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-const AUTH_PAGES = ['/ingresar', '/registro', '/recuperar']
+const AUTH_PAGES = ['/ingresar', '/registro', '/recuperar', '/activar']
 
 /** "Ingresar" del header: no se muestra en las propias pantallas de ingreso. */
 export function HeaderLoginButton() {

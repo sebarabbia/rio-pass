@@ -1,7 +1,8 @@
 // Valores por defecto de los eventos de Rio (compartidos entre cliente y servidor).
 export const DEFAULT_VENUE = 'Complejo Arenas · Playas del Thompson'
 export const DEFAULT_SECTORS = ['Sector General', 'Sector +25']
-export const DEFAULT_RRPP_QUOTA = 20
+export const DEFAULT_RRPP_QUOTA = 5 // incluye el QR propio del RRPP
+export const DEFAULT_RRPP_CAP = 1000 // tope total de QR de RRPP por fecha
 export const DEFAULT_ATTENDANCE_POINTS = 10 // igual que el default de events.attendance_points
 
 /** "Sector General, Sector +25" -> ["Sector General", "Sector +25"] (sin repetidos, máx. 8). */
