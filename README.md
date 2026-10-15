@@ -137,6 +137,13 @@ Volvé a entrar: aparece **Panel** en el menú. Desde ahí se asignan los demás
 
 **/organizador/demo** (ya no tiene botón en el panel) carga 3 fechas publicadas con flyers reales (Apertura, Rio Tropical, Old School) en los viernes del verano 2027, más la temporada "Verano 2027". Se suben con la sesión del organizador (mismas reglas que una carga a mano) y se borran con un botón sin tocar los eventos reales.
 
+## Diseño ("Rio de noche, como afiche")
+
+- **Tipografías:** Cormorant Garamond (la serif del logo) en tamaños monumentales y en *itálica* para acentuar palabras; Archivo para texto, con las etiquetas angostas (`font-stretch`) como en un afiche.
+- **Paleta** (`:root` en `globals.css`): pizarra `#2B3A3F` (marca), noche `#1B2629` (bandas de contraste), hueso `#F1ECE3` (secciones claras, entradas de papel) y un solo acento, arena `#E2C58C`, usado con moderación.
+- **Recursos:** grano de película sutil, la línea del río (`components/RiverLine`), marquesina de fechas (`components/Marquee`), la próxima fecha como afiche con marco de papel, agenda editorial con índices y filetes, QR como entrada con troquel y pie con el logo gigante recortado.
+- **Movimiento:** entrada escalonada en la primera pantalla y aparición al scrollear solo con CSS (`animation-timeline: view()`, sin librerías). Todo se apaga con "reducir movimiento".
+
 ## Detalles de UX
 
 - **Vista previa en WhatsApp:** cada link (home, evento, QR) tiene una imagen 1200×630 generada en el servidor (`opengraph-image.tsx` + `lib/og.tsx`) con el flyer pasado a JPEG (los flyers se guardan en WebP y el generador no los lee).

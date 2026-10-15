@@ -4,7 +4,7 @@ import { Suspense } from 'react'
 import { PageLoading } from '@/components/PageStates'
 import { RankingList } from '@/components/RankingList'
 import { getCurrentUser, hasRole } from '@/lib/auth'
-import { getMyRanking, getRanking, PRIZE_POSITIONS, standingMessage, type League } from '@/lib/ranking'
+import { getMyRanking, getRanking, PRIZE_POSITIONS, standingMessage, type League, type RankingRow } from '@/lib/ranking'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
@@ -36,7 +36,17 @@ async function Ranking({ searchParams }: { searchParams: PageProps<'/ranking'>['
   return (
     <div className="page">
       <p className="kicker">{season ? `Ranking · ${season.name}` : 'Ranking'}</p>
-      <h1 className="page-title">{league === 'rrpp' ? 'Ranking de RRPP' : `Top ${PRIZE_POSITIONS} de la temporada`}</h1>
+      <h1 className="page-title">
+        {league === 'rrpp' ? (
+          <>
+            Ranking de <em>RRPP</em>
+          </>
+        ) : (
+          <>
+            Top {PRIZE_POSITIONS} de la <em>temporada</em>
+          </>
+        )}
+      </h1>
       <p className="muted page-lead">
         {league === 'rrpp'
           ? 'Las noches que vino cada RRPP esta temporada. Es interno: los clientes no lo ven.'
@@ -87,10 +97,31 @@ async function Ranking({ searchParams }: { searchParams: PageProps<'/ranking'>['
         </div>
       ) : (
         <>
-          <RankingList rows={rows} />
+          <Podium rows={rows.slice(0, 3)} />
+          {rows.length > 3 && <RankingList rows={rows.slice(3)} />}
           <p className="muted small">A igual puntaje, va primero quien llegó antes a ese total.</p>
         </>
       )}
     </div>
+  )
+}
+
+/** Los tres primeros, en grande. */
+function Podium({ rows }: { rows: RankingRow[] }) {
+  return (
+    <ol className="podium">
+      {rows.map((row) => (
+        <li key={row.pos} className={`podium-item is-${row.pos}${row.is_me ? ' is-me' : ''}`}>
+          <span className="podium-pos">{row.pos}</span>
+          <span className="podium-name">
+            {row.name}
+            {row.is_me && <span className="ranking-you">Vos</span>}
+          </span>
+          <span className="podium-points">
+            {row.points} <small>pts</small>
+          </span>
+        </li>
+      ))}
+    </ol>
   )
 }

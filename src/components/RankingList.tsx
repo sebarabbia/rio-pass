@@ -17,7 +17,7 @@ export function RankingList({ rows, compact = false }: { rows: RankingRow[]; com
               <small> pts</small>
             </span>
           </div>
-          {!compact && row.pos === PRIZE_POSITIONS && rows.length > PRIZE_POSITIONS && (
+          {!compact && row.pos === PRIZE_POSITIONS && rows.some((r) => r.pos > PRIZE_POSITIONS) && (
             <p className="ranking-cut">Zona de premio ↑</p>
           )}
         </li>

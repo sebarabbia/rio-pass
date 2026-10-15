@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { cache, Suspense } from 'react'
+import { Logo } from '@/components/Logo'
 import { PageLoading } from '@/components/PageStates'
-import { formatLongDay, formatTime } from '@/lib/format'
+import { formatLongDay, formatShortDay, formatTime } from '@/lib/format'
 import { getOrigin, qrSvg, ticketUrl } from '@/lib/site'
 import { createPublicClient } from '@/lib/supabase/public'
 
@@ -51,27 +52,42 @@ async function Ticket({ params }: { params: PageProps<'/qr/[code]'>['params'] })
 
   return (
     <div className="page ticket-page">
-      <p className="kicker">
-        {ticket.kind === 'invitacion' ? 'Invitación sin cargo' : ticket.kind === 'rrpp' ? 'QR de RRPP · intransferible' : 'Entrada'}
-      </p>
-      <h1 className="page-title">{ticket.event_name}</h1>
-      <p className="ticket-when">
-        {formatLongDay(ticket.event_starts_at)} · {formatTime(ticket.event_starts_at)} h
-        <br />
-        {ticket.event_venue}
-      </p>
-
-      {!valid && (
-        <p className="ticket-banner" role="alert">
-          {STATUS_BANNER[ticket.status as 'usado' | 'anulado']}
-        </p>
-      )}
-
-      <div className={`ticket-card${valid ? '' : ' is-invalid'}`}>
-        <div className="ticket-qr" role="img" aria-label="Código QR de ingreso" dangerouslySetInnerHTML={{ __html: svg }} />
-        <p className="ticket-holder">{ticket.holder_name}</p>
-        {ticket.sector && <p className="ticket-sector">{ticket.sector}</p>}
-      </div>
+      <article className={`ticket${valid ? '' : ' is-invalid'}${ticket.kind === 'rrpp' ? ' is-rrpp' : ''}`}>
+        <div className="ticket-top">
+          <div className="ticket-brand">
+            <Logo className="ticket-logo" title="Rio" />
+            <span className="ticket-kind">
+              {ticket.kind === 'invitacion' ? 'Invitación sin cargo' : ticket.kind === 'rrpp' ? 'RRPP · intransferible' : 'Entrada'}
+            </span>
+          </div>
+          <h1 className="ticket-event">{ticket.event_name}</h1>
+          <dl className="ticket-meta">
+            <div>
+              <dt>Fecha</dt>
+              <dd>{formatShortDay(ticket.event_starts_at)}</dd>
+            </div>
+            <div>
+              <dt>Hora</dt>
+              <dd>{formatTime(ticket.event_starts_at)} h</dd>
+            </div>
+            <div className="is-wide">
+              <dt>Lugar</dt>
+              <dd>{ticket.event_venue}</dd>
+            </div>
+          </dl>
+        </div>
+        <div className="ticket-perf" aria-hidden="true" />
+        <div className="ticket-bottom">
+          {!valid && (
+            <p className="ticket-banner" role="alert">
+              {STATUS_BANNER[ticket.status as 'usado' | 'anulado']}
+            </p>
+          )}
+          <div className="ticket-qr" role="img" aria-label="Código QR de ingreso" dangerouslySetInnerHTML={{ __html: svg }} />
+          <p className="ticket-holder">{ticket.holder_name}</p>
+          {ticket.sector && <p className="ticket-sector">{ticket.sector}</p>}
+        </div>
+      </article>
 
       {valid && (
         <div className="ticket-tips">

@@ -4,7 +4,8 @@ export const LOGO_PATH =
 
 export function Logo({ className, title = 'Rio' }: { className?: string; title?: string }) {
   return (
-    <svg className={className} viewBox="0 0 888 618" role="img" aria-label={title}>
+    // Con title="" es decorativo (marca de agua, afiches): se oculta a lectores de pantalla.
+    <svg className={className} viewBox="0 0 888 618" {...(title ? { role: 'img', 'aria-label': title } : { 'aria-hidden': true })}>
       <path fill="currentColor" fillRule="evenodd" d={LOGO_PATH} />
     </svg>
   )

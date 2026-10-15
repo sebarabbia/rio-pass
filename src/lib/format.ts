@@ -57,3 +57,12 @@ export function slugify(text: string) {
 export function firstName(fullName: string) {
   return fullName.trim().split(/\s+/)[0] ?? ''
 }
+
+const partFormat = new Intl.DateTimeFormat('es-AR', { timeZone: TIME_ZONE, weekday: 'short', day: 'numeric', month: 'short' })
+
+/** "2027-01-15T…" -> { day: "15", month: "ene", weekday: "vie" } (hora argentina), para diagramar la fecha en grande. */
+export function dateParts(iso: string) {
+  const parts = Object.fromEntries(partFormat.formatToParts(new Date(iso)).map((p) => [p.type, p.value]))
+  const clean = (v: string | undefined) => (v ?? '').replace(/\./g, '')
+  return { day: clean(parts.day), month: clean(parts.month), weekday: clean(parts.weekday) }
+}
