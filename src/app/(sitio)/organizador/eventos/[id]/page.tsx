@@ -12,16 +12,22 @@ import { EventForm } from '../../EventForm'
 
 export const metadata: Metadata = { title: 'Editar evento' }
 
-export default function EditEventPage({ params }: PageProps<'/organizador/eventos/[id]'>) {
+export default function EditEventPage(props: PageProps<'/organizador/eventos/[id]'>) {
   return (
     <Suspense fallback={<PageLoading />}>
-      <EditEvent params={params} />
+      <EditEvent {...props} />
     </Suspense>
   )
 }
 
-async function EditEvent({ params }: { params: PageProps<'/organizador/eventos/[id]'>['params'] }) {
-  const { id } = await params
+const DELETE_ERRORS: Record<string, string> = {
+  ventas: 'Este evento tiene compras online: no se puede borrar. Pasalo a "Cancelado" (no se ve en la web) y devolvé las compras desde Ventas si hace falta.',
+  borrar: 'No se pudo borrar el evento. Probá pasarlo a "Cancelado".',
+}
+
+async function EditEvent({ params, searchParams }: PageProps<'/organizador/eventos/[id]'>) {
+  const [{ id }, query] = await Promise.all([params, searchParams])
+  const deleteError = typeof query.error === 'string' ? DELETE_ERRORS[query.error] : undefined
   const user = await requireUser(`/organizador/eventos/${id}`)
   if (!hasRole(user, 'organizador')) notFound()
 
@@ -76,6 +82,7 @@ async function EditEvent({ params }: { params: PageProps<'/organizador/eventos/[
       <section className="card danger-zone" aria-labelledby="danger-title">
         <p id="danger-title" className="card-title">Eliminar evento</p>
         <p className="muted">Se borran también sus invitaciones y el registro de la puerta. Si solo querés sacarlo de la web, pasalo a borrador.</p>
+        {deleteError && <p className="form-error" role="alert">{deleteError}</p>}
         <DeleteEventButton id={event.id} name={event.name} />
       </section>
     </div>

@@ -1,0 +1,8 @@
+# Configuración de las Edge Functions (Supabase CLI).
+# Las dos verifican la sesión por dentro; "pagos" además recibe los avisos de
+# Mercado Pago, que no traen un JWT de Supabase.
+[functions.pagos]
+verify_jwt = false
+
+[functions.cuentas]
+verify_jwt = false

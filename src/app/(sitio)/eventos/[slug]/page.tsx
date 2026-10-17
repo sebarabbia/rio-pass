@@ -9,7 +9,8 @@ import { ShareEvent } from '@/components/ShareEvent'
 import { flyerUrl, getPublicEvent, GOING_MIN } from '@/lib/events'
 import { dateParts, formatLongDay, formatShortDay, formatTime } from '@/lib/format'
 import { getCurrentUser } from '@/lib/auth'
-import { getTicketOffer } from '@/lib/sales'
+import { getTicketOffer, nowIso } from '@/lib/sales'
+import { createClient } from '@/lib/supabase/server'
 import { siteUrl } from '@/lib/site'
 
 function mapsUrl(venue: string) {
@@ -127,7 +128,29 @@ async function EventDetail({ params }: { params: PageProps<'/eventos/[slug]'>['p
 async function TicketSales({ eventId, eventSlug }: { eventId: string; eventSlug: string }) {
   const [offer, user] = await Promise.all([getTicketOffer(eventId), getCurrentUser()])
   if (offer.length === 0) return null
-  return <BuyBox eventId={eventId} eventSlug={eventSlug} offer={offer} loggedIn={!!user} />
+  if (!user) return <BuyBox eventId={eventId} eventSlug={eventSlug} offer={offer} loggedIn={false} />
+
+  // Su propia reserva vigente (por ejemplo, si volvió de Mercado Pago sin pagar) no le
+  // cuenta en contra: al comprar de nuevo, esa reserva se reemplaza.
+  const supabase = await createClient()
+  const { data: mine } = await supabase
+    .from('orders')
+    .select('order_items(ticket_type_id, quantity)')
+    .eq('user_id', user.id)
+    .eq('event_id', eventId)
+    .eq('kind', 'entradas')
+    .eq('status', 'pendiente')
+    .gt('expires_at', nowIso())
+  const held = new Map<string, number>()
+  for (const order of mine ?? []) {
+    for (const item of order.order_items) {
+      if (item.ticket_type_id) held.set(item.ticket_type_id, (held.get(item.ticket_type_id) ?? 0) + item.quantity)
+    }
+  }
+  const adjusted = offer.map((o) =>
+    o.available === null ? o : { ...o, available: o.available + (held.get(o.ticket_type_id) ?? 0) },
+  )
+  return <BuyBox eventId={eventId} eventSlug={eventSlug} offer={adjusted} loggedIn />
 }
 
 async function HowToEnterWithSales({ eventId }: { eventId: string }) {

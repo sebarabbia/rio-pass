@@ -49,6 +49,8 @@ async function mp<T = Record<string, unknown>>(path: string, init: RequestInit =
   const res = await fetch(`${MP_API}${path}`, {
     ...init,
     headers: { Authorization: `Bearer ${MP_TOKEN}`, 'Content-Type': 'application/json', ...(init.headers ?? {}) },
+    // Que una demora de Mercado Pago no cuelgue la pantalla (ni pase los 22 s del webhook).
+    signal: AbortSignal.timeout(10_000),
   })
   const text = await res.text()
   if (!res.ok) {
@@ -161,6 +163,7 @@ async function currentUser(req: Request) {
 }
 
 type OrderDraft = {
+  superseded_preferences?: string[]
   order_id: string
   total: number
   expires_at: string
@@ -219,6 +222,16 @@ async function checkout(userId: string, eventId: unknown, items: unknown) {
     throw err
   }
   await admin.from('orders').update({ mp_preference_id: created.id }).eq('id', order.order_id)
+  // Las reservas anteriores de esta persona ya se liberaron: se vencen sus pagos en
+  // Mercado Pago para que no se paguen sin cupo (si falla, queda el aviso "sin_cupo").
+  await Promise.allSettled(
+    (order.superseded_preferences ?? []).map((id) =>
+      mp(`/checkout/preferences/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ expires: true, expiration_date_to: mpDate(new Date()) }),
+      }),
+    ),
+  )
   // init_point sirve tanto con credenciales de prueba como de producción (sandbox_init_point ya no se usa).
   return { order_id: order.order_id, init_point: created.init_point }
 }
@@ -240,9 +253,9 @@ async function sync(user: { id: string; isOrganizer: boolean }, orderId: unknown
     const found = await mp<{ results?: MpPayment[] }>(
       `/v1/payments/search?external_reference=${order.id}&sort=date_created&criteria=desc&limit=10`,
     )
-    // Del más viejo al más nuevo, para que el estado final sea el último.
+    // Del más viejo al más nuevo; cada uno se consulta de nuevo (la búsqueda puede estar desactualizada).
     for (const payment of [...(found.results ?? [])].reverse()) {
-      if (payment.external_reference === order.id) await admin.rpc('apply_mp_payment', { _payment: payment })
+      if (payment.external_reference === order.id) await applyPayment(payment.id)
     }
   }
   const { data: updated } = await admin.from('orders').select('status').eq('id', order.id).single()
@@ -257,23 +270,27 @@ async function refund(user: { id: string; isOrganizer: boolean }, orderId: unkno
     .select('provider_payment_id')
     .eq('order_id', order.id)
     .eq('status', 'aprobado')
-  const paymentId = payments?.[0]?.provider_payment_id
-  if (!paymentId) throw new AppError('sin_pago_aprobado')
-  await mp(`/v1/payments/${paymentId}/refunds`, {
-    method: 'POST',
-    headers: { 'X-Idempotency-Key': `refund-${order.id}` },
-    body: JSON.stringify({}),
-  })
-  await applyPayment(paymentId)
+  if (!payments?.length) throw new AppError('sin_pago_aprobado')
+  // Se devuelven todos los pagos aprobados del pedido (si hubo un pago duplicado, también).
+  for (const { provider_payment_id: paymentId } of payments) {
+    if (!paymentId) continue
+    await mp(`/v1/payments/${paymentId}/refunds`, {
+      method: 'POST',
+      headers: { 'X-Idempotency-Key': `refund-${paymentId}` },
+      body: JSON.stringify({}),
+    })
+    await applyPayment(paymentId)
+  }
   const { data: updated } = await admin.from('orders').select('status').eq('id', order.id).single()
   return { order_status: updated?.status }
 }
 
 /** Cuenta con ese email; si no existe, se crea sin contraseña (la activa en /activar). */
-async function ensureAccount(email: string, fullName: string) {
+async function ensureAccount(email: string) {
   const found = await admin.from('profiles').select('id').eq('email', email).maybeSingle()
   if (found.data) return found.data.id as string
-  const { data, error } = await admin.auth.admin.createUser({ email, email_confirm: true, user_metadata: { full_name: fullName } })
+  // El nombre lo escribe otra persona: queda solo en la entrada, no como nombre de la cuenta.
+  const { data, error } = await admin.auth.admin.createUser({ email, email_confirm: true })
   if (error) {
     const again = await admin.from('profiles').select('id').eq('email', email).maybeSingle()
     if (again.data) return again.data.id as string
@@ -289,11 +306,17 @@ async function transfer(userId: string, ticketId: unknown, emailRaw: unknown, na
   if (!EMAIL_RE.test(email)) throw new AppError('email_invalido')
 
   // Antes de crear una cuenta, se verifica que la entrada sea suya y se pueda pasar.
-  const { data: ticket } = await admin.from('tickets').select('id, user_id, kind, status, order_id').eq('id', ticketId).maybeSingle()
+  const { data: ticket } = await admin
+    .from('tickets')
+    .select('id, user_id, kind, status, order_id, events(starts_at)')
+    .eq('id', ticketId)
+    .maybeSingle()
   if (!ticket || ticket.user_id !== userId || ticket.kind !== 'entrada' || !ticket.order_id) throw new AppError('entrada_no_transferible')
   if (ticket.status !== 'valido') throw new AppError('entrada_no_valida')
+  const startsAt = (ticket.events as { starts_at?: string } | null)?.starts_at
+  if (!startsAt || new Date(startsAt).getTime() < Date.now() - 6 * 60 * 60 * 1000) throw new AppError('evento_pasado')
 
-  await ensureAccount(email, name)
+  await ensureAccount(email)
   const { error } = await admin.rpc('transfer_ticket', { _ticket_id: ticketId, _from: userId, _to_email: email, _to_name: name })
   if (error) throw new AppError(error.message?.match(/^[a-z_]+$/) ? error.message : 'entrada_no_transferible')
   return { ticket_id: ticketId }

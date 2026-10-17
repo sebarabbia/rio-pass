@@ -7,7 +7,7 @@ import { hasRole, requireUser } from '@/lib/auth'
 import { upcomingSince } from '@/lib/events'
 import { firstName, formatLongDay, formatMoney, formatShortDay, formatTime } from '@/lib/format'
 import { getMyRanking, REASON_LABELS, standingMessage } from '@/lib/ranking'
-import { recentOrdersSince, syncOrder } from '@/lib/sales'
+import { hasExpired, recentOrdersSince, syncOrder } from '@/lib/sales'
 import { getOrigin, qrSvg, ticketUrl } from '@/lib/site'
 import { createClient } from '@/lib/supabase/server'
 import { TransferTicket } from '@/components/TransferTicket'
@@ -15,10 +15,10 @@ import { ProfileForm } from './ProfileForm'
 
 export const metadata: Metadata = { title: 'Mi cuenta' }
 
-export default function AccountPage() {
+export default function AccountPage({ searchParams }: PageProps<'/cuenta'>) {
   return (
     <Suspense fallback={<PageLoading label="Cargando tu cuenta…" />}>
-      <Account />
+      <Account searchParams={searchParams} />
     </Suspense>
   )
 }
@@ -28,7 +28,9 @@ const TICKET_STATUS = { valido: 'Válido', usado: 'Usado', anulado: 'Anulado' } 
 const ORDER_STATUS = { pendiente: 'Pendiente', pagado: 'Pagada', entregado: 'Entregada', cancelado: 'Cancelada', reembolsado: 'Devuelta' } as const
 const ORDER_PILL = { pendiente: 'pill-muted', pagado: 'pill-ok', entregado: 'pill-ok', cancelado: 'pill-muted', reembolsado: 'pill-bad' } as const
 
-async function Account() {
+async function Account({ searchParams }: { searchParams: PageProps<'/cuenta'>['searchParams'] }) {
+  const query = await searchParams
+  const passedTo = typeof query.pasada === 'string' ? query.pasada.slice(0, 80) : null
   const user = await requireUser('/cuenta')
   const supabase = await createClient()
 
@@ -41,6 +43,7 @@ async function Account() {
     .in('status', ['pendiente', 'cancelado'])
     .not('mp_preference_id', 'is', null)
     .gte('created_at', recentOrdersSince())
+    .order('created_at', { ascending: false })
     .limit(3)
   if (unconfirmed?.length) await Promise.all(unconfirmed.map((o) => syncOrder(supabase, o.id)))
 
@@ -59,7 +62,7 @@ async function Account() {
   // Mis compras (entradas pagadas con Mercado Pago).
   const { data: orders } = await supabase
     .from('orders')
-    .select('id, status, total, created_at, events(name)')
+    .select('id, status, total, created_at, expires_at, events(name)')
     .eq('user_id', user.id)
     .eq('kind', 'entradas')
     .neq('status', 'cancelado')
@@ -91,6 +94,12 @@ async function Account() {
     <div className="page">
       <p className="kicker">Mi cuenta</p>
       <h1 className="page-title">{name ? `Hola, ${name}` : 'Hola'}</h1>
+      {passedTo && (
+        <p className="card notice form-ok" role="status">
+          Le pasaste la entrada a {passedTo}. Tu QR anterior ya no sirve. Avisale que entre a la web con su email (si es
+          nueva, que active su cuenta en “Activá tu cuenta”).
+        </p>
+      )}
 
       {/* ---------------- Tu próxima entrada: el QR a mano, sin buscarlo ---------------- */}
       {nextTicket && nextQr && nextTicket.events && (
@@ -170,7 +179,11 @@ async function Account() {
                       {formatShortDay(o.created_at)} · {formatMoney(o.total)}
                     </p>
                   </div>
-                  <span className={`pill ${ORDER_PILL[o.status]}`}>{ORDER_STATUS[o.status]}</span>
+                  {o.status === 'pendiente' && hasExpired(o.expires_at) ? (
+                    <span className="pill pill-muted">Vencida</span>
+                  ) : (
+                    <span className={`pill ${ORDER_PILL[o.status]}`}>{ORDER_STATUS[o.status]}</span>
+                  )}
                 </Link>
               </li>
             ))}

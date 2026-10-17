@@ -127,7 +127,12 @@ export async function deleteEvent(formData: FormData) {
   const id = String(formData.get('id') ?? '')
   if (!id) return
 
-  const { data: deleted } = await supabase.from('events').delete().eq('id', id).select('flyer_path').maybeSingle()
+  // Con compras no se borra (se perderían las entradas y los pagos): se cancela o se pasa a borrador.
+  const { count } = await supabase.from('orders').select('id', { count: 'exact', head: true }).eq('event_id', id)
+  if (count) redirect(`/organizador/eventos/${id}?error=ventas`)
+
+  const { data: deleted, error } = await supabase.from('events').delete().eq('id', id).select('flyer_path').maybeSingle()
+  if (error) redirect(`/organizador/eventos/${id}?error=borrar`)
   if (deleted?.flyer_path) await supabase.storage.from(FLYERS_BUCKET).remove([deleted.flyer_path])
   updateTag(EVENTS_TAG)
   redirect('/organizador')

@@ -129,7 +129,8 @@ En la web, cada fecha muestra cuántos QR se entregaron ("🔥 N ya tienen su QR
    - `MP_WEBHOOK_SECRET` = la clave secreta de los webhooks.
    - `MP_TEST_MODE` = `true` mientras uses credenciales de prueba.
 4. Probá una compra: abrí la web en una ventana de incógnito, pagá con la cuenta **compradora de prueba** y una tarjeta de prueba (titular `APRO` para aprobado, `OTHE` para rechazado).
-5. Para vender de verdad: completá los datos de tu cuenta de Mercado Pago, reemplazá `MP_ACCESS_TOKEN` por el de **producción** y borrá `MP_TEST_MODE` (o ponelo en `false`). Revisá que la URL de webhooks esté cargada también en modo productivo.
+5. Si un pago no aparece: Supabase → Edge Functions → `pagos` → **Logs** (ahí se ve si el aviso llegó, si la firma no coincidió o si Mercado Pago no respondió), y en el panel **Ventas → Revisar pago**.
+6. Para vender de verdad: completá los datos de tu cuenta de Mercado Pago, reemplazá `MP_ACCESS_TOKEN` por el de **producción** y borrá `MP_TEST_MODE` (o ponelo en `false`). Revisá que la URL de webhooks esté cargada también en modo productivo.
 
 ## Configuración de Auth (una vez, en el dashboard de Supabase)
 
@@ -182,3 +183,11 @@ Producción: **https://rio-pass.vercel.app** (proyecto `rio-pass` en Vercel, fun
 3. En Supabase → Authentication → URL Configuration: Site URL = la URL de Vercel, y agregar `<url>/auth/confirm` a Redirect URLs.
 
 Cada push a `main` se publica solo. La demo NFC sigue en GitHub Pages, servida desde `docs/`.
+
+**Edge Functions (Supabase):** `pagos` y `cuentas` verifican la sesión por dentro (el webhook de Mercado Pago llega sin sesión), así que se publican sin la verificación de JWT de Supabase. `supabase/config.toml` ya lo indica; con la CLI:
+
+```bash
+supabase functions deploy pagos --no-verify-jwt --project-ref xupmwmmfdlumlvukoafa
+```
+
+Si se publica con la verificación activada, Mercado Pago recibe 401 y los pagos solo se aplican cuando el cliente vuelve a la web.

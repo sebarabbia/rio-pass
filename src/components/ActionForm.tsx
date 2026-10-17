@@ -3,7 +3,8 @@
 import { toast } from '@/components/Toast'
 
 type Props = {
-  action: (formData: FormData) => Promise<void>
+  /** Puede devolver { error } para mostrar el motivo en el aviso. */
+  action: (formData: FormData) => Promise<void | { error?: string }>
   /** Texto del aviso cuando la acciÃ³n termina bien. */
   success: string
   error?: string
@@ -23,8 +24,9 @@ export function ActionForm({ action, success, error = 'No se pudo guardar. ProbÃ
       className={className}
       action={async (formData) => {
         try {
-          await action(formData)
-          toast(success)
+          const result = await action(formData)
+          if (result && result.error) toast(result.error, 'error')
+          else toast(success)
         } catch (err) {
           if (isNextControlFlow(err)) throw err
           toast(error, 'error')

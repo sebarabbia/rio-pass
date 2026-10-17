@@ -8,7 +8,7 @@ import { ConfirmSubmit } from '@/components/ConfirmSubmit'
 import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser } from '@/lib/auth'
 import { formatMoney, formatShortDay, formatTime, toLocalDateTime } from '@/lib/format'
-import { paymentsStatus } from '@/lib/sales'
+import { hasExpired, paymentsStatus } from '@/lib/sales'
 import { createClient } from '@/lib/supabase/server'
 import { updateTicketType } from './actions'
 
@@ -22,7 +22,13 @@ const ATTENTION: Record<string, string> = {
   sin_cupo: 'Se pagó cuando ya no había cupo: decidí si la devolvés.',
   monto_distinto: 'El monto pagado no coincide: no se emitieron QR. Revisalo en Mercado Pago.',
   reembolso_con_uso: 'Se devolvió pero alguna entrada ya se había usado.',
+  pago_duplicado: 'Pagó dos veces la misma compra: devolvé uno de los pagos desde Mercado Pago.',
+  en_disputa: 'El comprador abrió una disputa en Mercado Pago: respondela desde tu cuenta de Mercado Pago.',
+  contracargo: 'Hubo un contracargo: se anularon los QR sin usar.',
+  reembolso_parcial: 'Mercado Pago registra una devolución parcial: revisá qué entradas anular.',
+  sin_sector: 'El sector de esta compra ya no existe: no se emitieron QR. Devolvé el pago.',
 }
+const ORDER_EXPIRED = 'Vencida'
 
 export default function SalesPage(props: Props) {
   return (
@@ -41,7 +47,7 @@ async function Sales({ params, searchParams }: Props) {
   const supabase = await createClient()
   let ordersQuery = supabase
     .from('orders')
-    .select('id, status, total, attention, created_at, paid_at, buyer:profiles!orders_user_id_fkey(full_name, email), order_items(name, quantity)')
+    .select('id, status, total, attention, created_at, paid_at, expires_at, buyer:profiles!orders_user_id_fkey(full_name, email), order_items(name, quantity), payments(id)')
     .eq('event_id', id)
     .eq('kind', 'entradas')
     .order('created_at', { ascending: false })
@@ -62,6 +68,10 @@ async function Sales({ params, searchParams }: Props) {
   const sold = (summary ?? []).reduce((sum, s) => sum + s.sold, 0)
   const reserved = (summary ?? []).reduce((sum, s) => sum + s.reserved, 0)
   const when = `${formatShortDay(event.starts_at)} ${formatTime(event.starts_at)} h`
+  // Reservas que vencieron sin ningún pago: no son compras (se ven con "Ver también canceladas").
+  const visibleOrders = (orders ?? []).filter(
+    (o) => showAll || !(o.status === 'pendiente' && hasExpired(o.expires_at) && o.payments.length === 0),
+  )
   const alerts = (orders ?? []).filter((o) => o.attention)
 
   return (
@@ -131,7 +141,7 @@ async function Sales({ params, searchParams }: Props) {
                   <div className="field-row two">
                     <div className="field">
                       <label htmlFor={`price-${t.id}`}>Precio (ARS)</label>
-                      <input id={`price-${t.id}`} name="price" type="number" inputMode="decimal" min={0} step="any" className="input" defaultValue={Number(t.price) || ''} placeholder="0 = no se vende" />
+                      <input id={`price-${t.id}`} name="price" type="text" inputMode="decimal" className="input" defaultValue={Number(t.price) ? formatMoney(t.price).replace(/[^\d.,]/g, '') : ''} placeholder="Ej.: 5.000 (vacío = no se vende)" />
                     </div>
                     <div className="field">
                       <label htmlFor={`qty-${t.id}`}>Cupo online</label>
@@ -159,16 +169,18 @@ async function Sales({ params, searchParams }: Props) {
       <section aria-labelledby="h-pedidos">
         <div className="row">
           <h2 id="h-pedidos" className="block-title">Compras</h2>
-          <Link href={showAll ? '?' : '?ver=todos'} className="link-hint">{showAll ? 'Ocultar canceladas' : 'Ver también canceladas'}</Link>
+          <Link href={showAll ? '?' : '?ver=todos'} className="link-hint">{showAll ? 'Ocultar canceladas y vencidas' : 'Ver también canceladas y vencidas'}</Link>
         </div>
-        {!orders?.length ? (
+        {!visibleOrders.length ? (
           <div className="empty">
             <p className="empty-title">Todavía no hay compras</p>
             <p>Cuando alguien compre por la web, aparece acá.</p>
           </div>
         ) : (
           <ul className="list">
-            {orders.map((o) => (
+            {visibleOrders.map((o) => {
+              const expired = o.status === 'pendiente' && hasExpired(o.expires_at)
+              return (
               <li key={o.id} className={`card order-row${o.attention ? ' has-attention' : ''}`}>
                 <div className="row">
                   <div className="invitation-info">
@@ -182,7 +194,7 @@ async function Sales({ params, searchParams }: Props) {
                   <span className="order-amount">{formatMoney(o.total)}</span>
                 </div>
                 <div className="invitation-actions">
-                  <span className={`pill ${ORDER_PILL[o.status]}`}>{ORDER_STATUS[o.status]}</span>
+                  <span className={`pill ${expired ? 'pill-muted' : ORDER_PILL[o.status]}`}>{expired ? ORDER_EXPIRED : ORDER_STATUS[o.status]}</span>
                   {o.attention && <span className="pill pill-bad">Revisar</span>}
                   {o.status === 'pagado' && (
                     <ActionForm action={refundPurchase} success="Devolución pedida a Mercado Pago" error="No se pudo devolver. Revisalo en Mercado Pago.">
@@ -193,7 +205,7 @@ async function Sales({ params, searchParams }: Props) {
                       </ConfirmSubmit>
                     </ActionForm>
                   )}
-                  {(o.status === 'pendiente' || o.attention) && (
+                  {((o.status === 'pendiente' && o.payments.length > 0) || o.attention) && (
                     <ActionForm action={recheckPurchase} success="Pago revisado" error="Mercado Pago no respondió.">
                       <input type="hidden" name="orderId" value={o.id} />
                       <input type="hidden" name="eventId" value={event.id} />
@@ -202,7 +214,8 @@ async function Sales({ params, searchParams }: Props) {
                   )}
                 </div>
               </li>
-            ))}
+              )
+            })}
           </ul>
         )}
       </section>

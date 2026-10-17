@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { getCurrentUser, hasRole } from '@/lib/auth'
 import { MAX_PER_ORDER, refundOrder, salesErrorMessage, startCheckout, syncOrder, transferTicket } from '@/lib/sales'
 import { createClient } from '@/lib/supabase/server'
@@ -45,7 +46,8 @@ export async function transferPurchasedTicket(_prev: TransferState, formData: Fo
   const result = await transferTicket(supabase, ticketId, email, name)
   if (!result.ok) return { error: salesErrorMessage(result.error) }
   revalidatePath('/cuenta')
-  return { message: `Listo: la entrada ahora es de ${name}. Le llega a su cuenta (${email}); tu QR anterior ya no sirve.` }
+  // La entrada sale de la lista (y con ella el formulario): el aviso se muestra arriba de la cuenta.
+  redirect(`/cuenta?pasada=${encodeURIComponent(name)}`)
 }
 
 async function requireOrganizerClient() {
@@ -55,23 +57,23 @@ async function requireOrganizerClient() {
 }
 
 /** Devuelve el pago completo de un pedido (organizador). Los QR sin usar se anulan. */
-export async function refundPurchase(formData: FormData) {
+export async function refundPurchase(formData: FormData): Promise<{ error?: string } | void> {
   const supabase = await requireOrganizerClient()
   const orderId = String(formData.get('orderId') ?? '')
   const eventId = String(formData.get('eventId') ?? '')
-  if (!UUID_RE.test(orderId)) throw new Error('Pedido inválido')
+  if (!UUID_RE.test(orderId)) return { error: 'Pedido inválido.' }
   const result = await refundOrder(supabase, orderId)
-  if (!result.ok) throw new Error(salesErrorMessage(result.error))
   revalidatePath(`/organizador/eventos/${eventId}/ventas`)
+  if (!result.ok) return { error: salesErrorMessage(result.error) }
 }
 
 /** Vuelve a consultar el pago en Mercado Pago (por si una notificación no llegó). */
-export async function recheckPurchase(formData: FormData) {
+export async function recheckPurchase(formData: FormData): Promise<{ error?: string } | void> {
   const supabase = await requireOrganizerClient()
   const orderId = String(formData.get('orderId') ?? '')
   const eventId = String(formData.get('eventId') ?? '')
-  if (!UUID_RE.test(orderId)) throw new Error('Pedido inválido')
+  if (!UUID_RE.test(orderId)) return { error: 'Pedido inválido.' }
   const result = await syncOrder(supabase, orderId)
-  if (!result.ok) throw new Error(salesErrorMessage(result.error))
   revalidatePath(`/organizador/eventos/${eventId}/ventas`)
+  if (!result.ok) return { error: salesErrorMessage(result.error) }
 }

@@ -39,9 +39,12 @@ Recuperar y cambiar contraseña, vista previa con flyer en los links de WhatsApp
 - Alta, asignación y bloqueo desde el panel.
 - El tap muestra el pase del RRPP. Abrir la sesión completa solo con el tap tiene riesgos (tarjeta perdida = cuenta abierta), así que conviene que el tap muestre el pase y que la cuenta siga pidiendo contraseña en dispositivos nuevos.
 
-## Etapa 7: Venta de entradas (y tarjetas) con Mercado Pago
-- `ticket_types` con precio y cupo. La compra crea `orders` + `order_items` y una preferencia de Checkout Pro.
-- Webhook de Mercado Pago (servidor, service role) → `payments` → cuando el pago queda aprobado, se emiten `tickets` con `order_id`.
+## Etapa 7: Venta de entradas con Mercado Pago (hecha; falta cargar las credenciales)
+- Precio, cupo online y ventana de venta por sector desde **Panel → Ventas**.
+- Compra en la página de la fecha (hasta 6 entradas, reserva de 15 minutos) con Checkout Pro; el precio y el total se calculan en la base.
+- Webhook de Mercado Pago (Edge Function `pagos`): siempre se consulta el pago en la API y se aplica con `apply_mp_payment` (idempotente, controla monto, moneda, duplicados, devoluciones, contracargos y sobreventa). Respaldo si el aviso no llega: al volver a la web, en Mi cuenta y con "Revisar pago".
+- QR en Mi cuenta, pasar una entrada a otra persona por email (el QR cambia), devolución desde el panel y resumen de lo recaudado.
+- Pendiente: venta de tarjetas (cuando esté la Etapa 6).
 
 ## Etapa 8 (opcional): Bebidas y barra exprés
 - Carta (`products`) y compra con Mercado Pago, igual que las entradas. El pedido pagado genera un `pickup_code` (QR).

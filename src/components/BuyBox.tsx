@@ -37,7 +37,13 @@ export function BuyBox({ eventSlug, eventId, offer, loggedIn }: { eventSlug: str
       const items = Object.entries(qty)
         .filter(([, q]) => q > 0)
         .map(([ticket_type_id, quantity]) => ({ ticket_type_id, quantity }))
-      const result = await buyTickets(eventId, items)
+      let result: Awaited<ReturnType<typeof buyTickets>>
+      try {
+        result = await buyTickets(eventId, items)
+      } catch {
+        setError('No pudimos conectar. Revisá tu conexión y probá de nuevo.')
+        return
+      }
       if (result.url) {
         setRedirecting(true)
         window.location.href = result.url

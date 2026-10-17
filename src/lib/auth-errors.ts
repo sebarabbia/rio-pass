@@ -3,7 +3,16 @@ import type { AuthError } from '@supabase/supabase-js'
 /** Solo permite volver a rutas internas (evita redirecciones a otros sitios). */
 export function safeNext(value: FormDataEntryValue | string | null | undefined, fallback = '/cuenta') {
   const next = typeof value === 'string' ? value : ''
-  return next.startsWith('/') && !next.startsWith('//') ? next : fallback
+  if (!next.startsWith('/') || next.startsWith('//')) return fallback
+  // "/\\otro.com" o con tabs/saltos el navegador los toma como otro sitio: se resuelve
+  // contra un origen ficticio y solo se acepta si queda en ese mismo origen.
+  try {
+    const url = new URL(next, 'https://rio.invalid')
+    if (url.origin !== 'https://rio.invalid') return fallback
+    return url.pathname + url.search + url.hash
+  } catch {
+    return fallback
+  }
 }
 
 /** Traduce los errores de Supabase Auth a mensajes claros en español. */

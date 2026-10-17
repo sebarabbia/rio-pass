@@ -39,9 +39,13 @@ async function Order({ params, searchParams }: Props) {
   if (!order) notFound()
 
   // Volviendo de Mercado Pago: se consulta el pago al toque, sin esperar la notificación.
-  const paymentId = typeof query.payment_id === 'string' ? query.payment_id : typeof query.collection_id === 'string' ? query.collection_id : null
-  if (order.status === 'pendiente' && (paymentId || query.pago === '1')) {
-    await syncOrder(supabase, orderId, paymentId && /^\d+$/.test(paymentId) ? paymentId : null)
+  // Solo mientras el pedido todavía no tiene pagos registrados (los refrescos siguientes leen la base).
+  const rawPaymentId = typeof query.payment_id === 'string' ? query.payment_id : typeof query.collection_id === 'string' ? query.collection_id : null
+  const paymentId = rawPaymentId && /^\d+$/.test(rawPaymentId) ? rawPaymentId : null
+  const mpStatus = typeof query.status === 'string' ? query.status : typeof query.collection_status === 'string' ? query.collection_status : null
+  const returned = query.pago === '1' || !!paymentId
+  if ((order.status === 'pendiente' || order.status === 'cancelado') && returned && (order.payments ?? []).length === 0) {
+    await syncOrder(supabase, orderId, paymentId)
     order = (await load()).data ?? order
   }
 
@@ -52,7 +56,10 @@ async function Order({ params, searchParams }: Props) {
 
   const event = order.events
   const lastPayment = [...(order.payments ?? [])].sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
-  const rejected = lastPayment?.status === 'rechazado' || query.status === 'rejected' || query.collection_status === 'rejected'
+  const paidButReview = lastPayment?.status === 'aprobado' && order.status !== 'pagado' && order.status !== 'reembolsado'
+  const rejected = lastPayment?.status === 'rechazado' || (!lastPayment && mpStatus === 'rejected')
+  // Volvió sin pagar (cerró el checkout o tocó "Volver al sitio").
+  const abandoned = !lastPayment && returned && !paymentId && (mpStatus === null || mpStatus === 'null')
   const expired = hasExpired(order.expires_at)
   const retry = event ? `/eventos/${event.slug}#entradas` : '/'
 
@@ -60,6 +67,7 @@ async function Order({ params, searchParams }: Props) {
   let title: React.ReactNode = 'Estamos confirmando tu pago'
   let text = 'Mercado Pago nos avisa en unos segundos. No cierres esta pantalla.'
   let waiting = false
+  let canRetry = false
   if (order.status === 'pagado') {
     kicker = 'Compra confirmada'
     title = <>¡Listo, nos <em>vemos</em>!</>
@@ -67,26 +75,37 @@ async function Order({ params, searchParams }: Props) {
   } else if (order.status === 'reembolsado') {
     title = 'Compra devuelta'
     text = 'Te devolvimos el pago y las entradas quedaron anuladas.'
-  } else if (order.status === 'cancelado') {
-    title = 'Esta reserva ya no está activa'
-    text = 'La reemplazaste por otra compra o se venció. Si pagaste igual, te llega por mail la confirmación de Mercado Pago y la revisamos.'
+  } else if (paidButReview) {
+    title = 'Recibimos tu pago'
+    text = 'Lo estamos revisando y te avisamos. Si tenés dudas, escribinos con el número de operación de Mercado Pago.'
   } else if (rejected) {
     title = 'El pago no se completó'
     text = 'Mercado Pago lo rechazó. Podés probar de nuevo con otra tarjeta.'
-  } else if (expired && !lastPayment) {
+    canRetry = true
+  } else if (abandoned) {
+    title = 'No completaste el pago'
+    text = expired
+      ? 'La reserva ya se venció. Podés volver a comprar.'
+      : 'Tus entradas siguen reservadas unos minutos. Podés volver a intentarlo.'
+    canRetry = true
+  } else if (order.status === 'cancelado' && mpStatus !== 'approved') {
+    title = 'Esta reserva ya no está activa'
+    text = 'La reemplazaste por otra compra o se venció. Si pagaste igual, te llega por mail la confirmación de Mercado Pago y la revisamos.'
+    canRetry = true
+  } else if (expired && !lastPayment && mpStatus !== 'approved') {
     title = 'La reserva venció'
     text = 'Pasaron más de 15 minutos sin pagar y las entradas se liberaron. Podés volver a comprar.'
+    canRetry = true
   } else {
     waiting = true
   }
 
   return (
     <div className="page narrow order-page">
-      {waiting && <AutoRefresh />}
       <p className="kicker">{kicker}</p>
       <h1 className="page-title">{title}</h1>
       <p className="muted page-lead">{text}</p>
-      {waiting && <p className="order-waiting" role="status">Actualizando…</p>}
+      {waiting && <AutoRefresh doneText="Todavía no nos llegó la confirmación. Apenas llegue, tus entradas aparecen en Mi cuenta." />}
 
       <section className="card order-summary" aria-label="Detalle de la compra">
         {event && (
@@ -133,9 +152,7 @@ async function Order({ params, searchParams }: Props) {
         </section>
       )}
 
-      {(rejected || (expired && order.status === 'pendiente' && !lastPayment) || order.status === 'cancelado') && (
-        <Link href={retry} className="btn btn-primary btn-block">Volver a comprar</Link>
-      )}
+      {canRetry && <Link href={retry} className="btn btn-primary btn-block">Volver a comprar</Link>}
       <Link href="/cuenta" className="btn btn-secondary btn-block">Ir a mi cuenta</Link>
     </div>
   )

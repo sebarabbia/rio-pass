@@ -22,6 +22,7 @@ export const getTicketOffer = cache(async (eventId: string): Promise<OfferItem[]
 // Mensajes de los errores que devuelven la función y la base.
 const ERRORS: Record<string, string> = {
   sin_sesion: 'Ingresá a tu cuenta para comprar.',
+  demasiados_intentos: 'Hiciste varios intentos de compra seguidos. Esperá un rato y probá de nuevo.',
   mp_no_configurado: 'La venta online todavía no está habilitada. Probá más tarde.',
   evento_no_disponible: 'Esta fecha ya no está a la venta.',
   sector_no_disponible: 'Ese sector no está a la venta en este momento.',
@@ -48,7 +49,7 @@ export function salesErrorMessage(code: string | undefined) {
 type PagosResponse<T> = ({ ok: true } & T) | { ok: false; error: string }
 
 async function callPagos<T>(supabase: Supabase, body: Record<string, unknown>): Promise<PagosResponse<T>> {
-  const { data, error } = await supabase.functions.invoke('pagos', { body })
+  const { data, error } = await supabase.functions.invoke('pagos', { body, timeout: 15_000 })
   if (error) {
     // Los errores "esperables" vienen en el cuerpo con status 4xx.
     let code = 'mp_error'
@@ -89,7 +90,12 @@ export function hasExpired(iso: string | null) {
   return !!iso && new Date(iso).getTime() < Date.now()
 }
 
-/** Desde cuándo se revisan solos los pedidos sin confirmar (últimas 24 h). */
+/** Desde cuándo se revisan solos los pedidos sin confirmar: un pago se puede hacer
+ *  hasta 15 minutos después de reservar, así que alcanza con la última media hora. */
 export function recentOrdersSince() {
-  return new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  return new Date(Date.now() - 30 * 60 * 1000).toISOString()
+}
+
+export function nowIso() {
+  return new Date().toISOString()
 }
