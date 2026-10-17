@@ -3,10 +3,13 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { Logo } from '@/components/Logo'
+import { BuyBox } from '@/components/BuyBox'
 import { Countdown } from '@/components/Countdown'
 import { ShareEvent } from '@/components/ShareEvent'
 import { flyerUrl, getPublicEvent, GOING_MIN } from '@/lib/events'
 import { dateParts, formatLongDay, formatShortDay, formatTime } from '@/lib/format'
+import { getCurrentUser } from '@/lib/auth'
+import { getTicketOffer } from '@/lib/sales'
 import { siteUrl } from '@/lib/site'
 
 function mapsUrl(venue: string) {
@@ -106,31 +109,59 @@ async function EventDetail({ params }: { params: PageProps<'/eventos/[slug]'>['p
           </a>
         </div>
 
+        <Suspense fallback={null}>
+          <TicketSales eventId={event.id} eventSlug={event.slug} />
+        </Suspense>
+
         {event.description && <p className="event2-description">{event.description}</p>}
 
-        <section className="steps" aria-labelledby="como-entro">
-          <h2 id="como-entro" className="steps-title">
-            ¿Cómo <em>entro</em>?
-          </h2>
-          <ol className="steps-list">
-            <li>
-              <span className="steps-n">01</span>
-              <p>Pedile tu QR sin cargo a uno de nuestros RRPP. Son limitados.</p>
-            </li>
-            <li>
-              <span className="steps-n">02</span>
-              <p>
-                Te llega por WhatsApp y, si tenés cuenta con el mismo email, también lo ves en <Link href="/cuenta">Mi cuenta</Link>.
-              </p>
-            </li>
-            <li>
-              <span className="steps-n">03</span>
-              <p>Mostralo en la puerta. Sacale una captura antes: en la playa a veces no hay señal.</p>
-            </li>
-          </ol>
-          <p className="muted small">La venta online de entradas llega pronto.</p>
-        </section>
+        <Suspense fallback={<HowToEnter onSale={false} />}>
+          <HowToEnterWithSales eventId={event.id} />
+        </Suspense>
       </div>
     </article>
+  )
+}
+
+/** Venta online (si la fecha tiene sectores con precio): disponibilidad al momento y sesión. */
+async function TicketSales({ eventId, eventSlug }: { eventId: string; eventSlug: string }) {
+  const [offer, user] = await Promise.all([getTicketOffer(eventId), getCurrentUser()])
+  if (offer.length === 0) return null
+  return <BuyBox eventId={eventId} eventSlug={eventSlug} offer={offer} loggedIn={!!user} />
+}
+
+async function HowToEnterWithSales({ eventId }: { eventId: string }) {
+  const offer = await getTicketOffer(eventId)
+  return <HowToEnter onSale={offer.some((o) => o.on_sale && o.available !== 0)} />
+}
+
+function HowToEnter({ onSale }: { onSale: boolean }) {
+  return (
+    <section className="steps" aria-labelledby="como-entro">
+      <h2 id="como-entro" className="steps-title">
+        ¿Cómo <em>entro</em>?
+      </h2>
+      <ol className="steps-list">
+        <li>
+          <span className="steps-n">01</span>
+          <p>
+            {onSale
+              ? 'Comprá tu entrada acá arriba o pedile tu QR sin cargo a uno de nuestros RRPP (son limitados).'
+              : 'Pedile tu QR sin cargo a uno de nuestros RRPP. Son limitados.'}
+          </p>
+        </li>
+        <li>
+          <span className="steps-n">02</span>
+          <p>
+            Tu QR queda en <Link href="/cuenta">Mi cuenta</Link>
+            {onSale ? '' : ' y te llega por WhatsApp'}.
+          </p>
+        </li>
+        <li>
+          <span className="steps-n">03</span>
+          <p>Mostralo en la puerta. Sacale una captura antes: en la playa a veces no hay señal.</p>
+        </li>
+      </ol>
+    </section>
   )
 }

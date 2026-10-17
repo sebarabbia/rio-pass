@@ -910,3 +910,56 @@ body:has(.topbar)::after {
 .next-ticket .btn-secondary { color: var(--bone-ink); border-color: rgba(31, 43, 46, 0.35); }
 .next-ticket.rrpp-pass { box-shadow: inset 0 0 0 2px #1d4ed8; }
 .next-ticket.rrpp-pass .kicker { color: #1d4ed8; }
+
+/* ---------------------------------------------------------------- Venta online */
+.buy { display: grid; gap: 14px; padding: 22px 20px 20px; background: var(--bone); color: var(--bone-ink); scroll-margin-top: 90px; }
+.buy-title { font-family: var(--serif); font-size: 2.4rem; font-weight: 600; line-height: 1; }
+.buy-title em { color: #7a5b22; font-style: italic; font-weight: 500; }
+.buy-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid rgba(31, 43, 46, 0.2); }
+.buy-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; border-bottom: 1px solid rgba(31, 43, 46, 0.14); }
+.buy-row.is-off { opacity: 0.55; }
+.buy-info { display: grid; gap: 4px; min-width: 0; }
+.buy-name { font-family: var(--serif); font-size: 1.5rem; font-weight: 600; line-height: 1.05; }
+.buy-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.buy-price { font-weight: 700; font-variant-numeric: tabular-nums; }
+.buy-badge { padding: 2px 8px; border: 1px solid rgba(31, 43, 46, 0.3); font-size: 0.75rem; font-weight: 700; font-stretch: 86%; letter-spacing: 0.12em; text-transform: uppercase; }
+.buy-badge.is-low { border-color: #8a4b12; color: #8a4b12; }
+.buy-badge.is-out { border-color: #8f1d1d; color: #8f1d1d; }
+.stepper { display: inline-flex; flex: none; align-items: center; border: 1px solid rgba(31, 43, 46, 0.35); }
+.stepper button { width: 44px; height: 44px; border: 0; background: transparent; color: var(--bone-ink); font: inherit; font-size: 1.3rem; cursor: pointer; touch-action: manipulation; }
+.stepper button:disabled { opacity: 0.3; cursor: default; }
+.stepper output { min-width: 2ch; text-align: center; font-family: var(--serif); font-size: 1.5rem; font-weight: 600; font-variant-numeric: lining-nums tabular-nums; }
+.buy-foot { display: grid; gap: 10px; }
+.buy-total { display: flex; align-items: baseline; justify-content: space-between; font-size: 0.85rem; font-weight: 700; font-stretch: 86%; letter-spacing: 0.16em; text-transform: uppercase; }
+.buy-total strong { font-family: var(--serif); font-size: 2rem; font-weight: 600; letter-spacing: 0; text-transform: none; font-variant-numeric: lining-nums; }
+.buy .btn-primary { background: var(--bone-ink); color: var(--bone); }
+.buy .btn-primary:disabled { opacity: 0.45; }
+.buy .form-error { color: #8f1d1d; }
+.buy-note { color: #56615f; font-size: 0.85rem; }
+
+/* Después de pagar */
+.order-page { gap: 18px; }
+.order-waiting { color: var(--sand); font-weight: 700; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.45; } }
+.order-summary { display: grid; gap: 12px; }
+.order-event { display: grid; gap: 2px; }
+.order-event strong { font-family: var(--serif); font-size: 1.6rem; font-weight: 600; line-height: 1.05; }
+.order-lines { list-style: none; display: grid; gap: 6px; margin: 0; padding: 12px 0; border-block: 1px solid var(--line); }
+.order-lines li, .order-total { display: flex; justify-content: space-between; gap: 12px; }
+.order-total strong { font-family: var(--serif); font-size: 1.6rem; font-variant-numeric: lining-nums; }
+
+/* Pasar una entrada */
+.transfer { margin-top: 6px; }
+.transfer > summary { cursor: pointer; padding: 6px 2px; color: var(--sand); font-size: 0.85rem; font-weight: 700; }
+.transfer-form { display: grid; gap: 8px; margin-top: 6px; }
+.transfer-done { margin-top: 6px; font-size: 0.9rem; }
+
+/* Panel de ventas */
+.mp-status { justify-self: start; padding: 6px 12px; border: 1px solid rgba(134, 227, 173, 0.4); color: var(--ok-text); font-size: 0.85rem; font-weight: 700; }
+.mp-status.is-test { border-color: rgba(246, 227, 184, 0.45); color: var(--warn-text); }
+.sector-card { display: grid; gap: 10px; }
+.sector-form { display: grid; gap: 12px; }
+.sector-form .btn { justify-self: start; }
+.sales-alerts ul { margin: 6px 0 0; padding-left: 18px; }
+.order-row.has-attention { border-color: rgba(255, 163, 163, 0.45); }
+.order-amount { font-family: var(--serif); font-size: 1.4rem; font-weight: 600; white-space: nowrap; font-variant-numeric: lining-nums; }

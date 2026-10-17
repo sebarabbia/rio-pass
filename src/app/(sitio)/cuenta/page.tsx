@@ -5,10 +5,12 @@ import { logout } from '@/app/auth/actions'
 import { PageLoading } from '@/components/PageStates'
 import { hasRole, requireUser } from '@/lib/auth'
 import { upcomingSince } from '@/lib/events'
-import { firstName, formatLongDay, formatShortDay, formatTime } from '@/lib/format'
+import { firstName, formatLongDay, formatMoney, formatShortDay, formatTime } from '@/lib/format'
 import { getMyRanking, REASON_LABELS, standingMessage } from '@/lib/ranking'
+import { recentOrdersSince, syncOrder } from '@/lib/sales'
 import { getOrigin, qrSvg, ticketUrl } from '@/lib/site'
 import { createClient } from '@/lib/supabase/server'
+import { TransferTicket } from '@/components/TransferTicket'
 import { ProfileForm } from './ProfileForm'
 
 export const metadata: Metadata = { title: 'Mi cuenta' }
@@ -23,21 +25,46 @@ export default function AccountPage() {
 
 const TICKET_KIND = { entrada: 'Entrada', invitacion: 'Invitación', rrpp: 'QR de RRPP' } as const
 const TICKET_STATUS = { valido: 'Válido', usado: 'Usado', anulado: 'Anulado' } as const
+const ORDER_STATUS = { pendiente: 'Pendiente', pagado: 'Pagada', entregado: 'Entregada', cancelado: 'Cancelada', reembolsado: 'Devuelta' } as const
+const ORDER_PILL = { pendiente: 'pill-muted', pagado: 'pill-ok', entregado: 'pill-ok', cancelado: 'pill-muted', reembolsado: 'pill-bad' } as const
 
 async function Account() {
   const user = await requireUser('/cuenta')
   const supabase = await createClient()
 
+  // Red de seguridad: si un aviso de Mercado Pago no llegó, los pedidos recientes sin
+  // confirmar se consultan al abrir la cuenta (así nadie se queda sin sus QR).
+  const { data: unconfirmed } = await supabase
+    .from('orders')
+    .select('id')
+    .eq('user_id', user.id)
+    .in('status', ['pendiente', 'cancelado'])
+    .not('mp_preference_id', 'is', null)
+    .gte('created_at', recentOrdersSince())
+    .limit(3)
+  if (unconfirmed?.length) await Promise.all(unconfirmed.map((o) => syncOrder(supabase, o.id)))
+
   const [{ data: cards }, { data: tickets }, me, origin] = await Promise.all([
     supabase.from('nfc_cards').select('id, uid, status, label').eq('user_id', user.id),
     supabase
       .from('tickets')
-      .select('id, kind, status, code, ticket_types(name), events(name, slug, starts_at)')
+      .select('id, kind, status, code, order_id, ticket_types(name), events(name, slug, starts_at)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     getMyRanking(),
     getOrigin(),
   ])
+
+
+  // Mis compras (entradas pagadas con Mercado Pago).
+  const { data: orders } = await supabase
+    .from('orders')
+    .select('id, status, total, created_at, events(name)')
+    .eq('user_id', user.id)
+    .eq('kind', 'entradas')
+    .neq('status', 'cancelado')
+    .order('created_at', { ascending: false })
+    .limit(10)
 
   // QR que todavía sirven (válidos y de fechas que no pasaron) y el resto, que va plegado.
   const since = upcomingSince()
@@ -129,6 +156,28 @@ async function Account() {
         )}
       </section>
 
+      {/* ---------------- Mis compras (solo si tiene) ---------------- */}
+      {orders && orders.length > 0 && (
+        <section className="section-block" aria-labelledby="compras">
+          <h2 id="compras" className="block-title">Mis compras</h2>
+          <ul className="list">
+            {orders.map((o) => (
+              <li key={o.id}>
+                <Link href={`/compra/${o.id}`} className="card row link-card">
+                  <div>
+                    <p className="card-title">{o.events?.name ?? 'Entradas'}</p>
+                    <p className="muted">
+                      {formatShortDay(o.created_at)} · {formatMoney(o.total)}
+                    </p>
+                  </div>
+                  <span className={`pill ${ORDER_PILL[o.status]}`}>{ORDER_STATUS[o.status]}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* ---------------- Mis puntos ---------------- */}
       <section className="section-block" aria-labelledby="puntos">
         <h2 id="puntos" className="block-title">Mis puntos</h2>
@@ -187,6 +236,7 @@ type TicketRow = {
   kind: 'entrada' | 'invitacion' | 'rrpp'
   status: 'valido' | 'usado' | 'anulado'
   code: string
+  order_id: string | null
   ticket_types: { name: string } | null
   events: { name: string; slug: string; starts_at: string } | null
 }
@@ -212,6 +262,7 @@ function TicketList({ tickets }: { tickets: TicketRow[] }) {
             </div>
             <span className={`pill ${ticket.status === 'valido' ? 'pill-ok' : 'pill-muted'}`}>{TICKET_STATUS[ticket.status]}</span>
           </Link>
+          {ticket.kind === 'entrada' && ticket.order_id && ticket.status === 'valido' && <TransferTicket ticketId={ticket.id} />}
         </li>
       ))}
     </ul>

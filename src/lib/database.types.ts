@@ -341,6 +341,9 @@ export type Database = {
       }
       orders: {
         Row: {
+          mp_preference_id: string | null
+          expires_at: string | null
+          attention: string | null
           created_at: string
           currency: string
           delivered_at: string | null
@@ -356,6 +359,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          mp_preference_id?: string | null
+          expires_at?: string | null
+          attention?: string | null
           created_at?: string
           currency?: string
           delivered_at?: string | null
@@ -371,6 +377,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          mp_preference_id?: string | null
+          expires_at?: string | null
+          attention?: string | null
           created_at?: string
           currency?: string
           delivered_at?: string | null
@@ -411,6 +420,7 @@ export type Database = {
       }
       payments: {
         Row: {
+          status_detail: string | null
           amount: number
           created_at: string
           currency: string
@@ -425,6 +435,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          status_detail?: string | null
           amount: number
           created_at?: string
           currency?: string
@@ -439,6 +450,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          status_detail?: string | null
           amount?: number
           created_at?: string
           currency?: string
@@ -742,6 +754,7 @@ export type Database = {
       }
       tickets: {
         Row: {
+          transferred_at: string | null
           rrpp_id: string | null
           code: string
           created_at: string
@@ -761,6 +774,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          transferred_at?: string | null
           rrpp_id?: string | null
           code?: string
           created_at?: string
@@ -780,6 +794,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          transferred_at?: string | null
           rrpp_id?: string | null
           code?: string
           created_at?: string
@@ -907,6 +922,29 @@ export type Database = {
       event_going_counts: {
         Args: { _event_ids: string[] }
         Returns: { event_id: string; going: number }[]
+      }
+      event_sales_summary: {
+        Args: { _event_id: string }
+        Returns: {
+          name: string
+          on_sale: boolean
+          price: number
+          quantity: number | null
+          reserved: number
+          revenue: number
+          sold: number
+          ticket_type_id: string
+        }[]
+      }
+      event_ticket_offer: {
+        Args: { _event_id: string }
+        Returns: {
+          available: number | null
+          name: string
+          on_sale: boolean
+          price: number
+          ticket_type_id: string
+        }[]
       }
       event_rrpp_board: {
         Args: { _event_id: string }

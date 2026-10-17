@@ -28,6 +28,7 @@ src/app/
     eventos/[slug]/          Detalle público (lugar, sectores, cómo entrar)
     qr/[code]/               Pantalla del QR que recibe el invitado (link de WhatsApp)
     ranking/                 Ranking de la temporada (top 10 con premio, tu puesto)
+    compra/[orderId]/        Vuelta de Mercado Pago: estado del pago y las entradas compradas
     registro/, ingresar/     Alta e inicio de sesión (email + contraseña)
     recuperar/, activar/     Recuperar contraseña o activar una cuenta creada por Rio (manda el mail)
     cuenta/contrasena/       Elegir contraseña nueva (desde el mail o desde Mi cuenta)
@@ -69,6 +70,7 @@ Las migraciones en `supabase/migrations/` ya están aplicadas al proyecto `rio-p
   - `set_user_profile`, `set_rrpp_manager`, `set_rrpp_access`, `event_rrpp_board`: perfiles, responsables y habilitación de RRPP (organizador).
   - `rrpp_event_status`: estado del RRPP en cada fecha (habilitado, cupo, tope, su QR).
   - `event_going_counts`: contador público de QR entregados por fecha.
+- **Edge Function `pagos`** (`supabase/functions/pagos`): Mercado Pago Checkout Pro (crear el pago, webhook, consultar, devolver y pasar entradas). Funciones de la base solo para el servidor: `create_ticket_order`, `apply_mp_payment`, `transfer_ticket`; públicas: `event_ticket_offer`; organizador: `event_sales_summary`.
 - **Edge Function `cuentas`** (`supabase/functions/cuentas`): crea cuentas sin contraseña (QR regalados a emails nuevos y alta masiva de RRPP). Verifica por dentro la sesión y el perfil de quien llama.
 - Auxiliares en el esquema `private` (no expuesto por la API).
 
@@ -108,6 +110,26 @@ En la web, cada fecha muestra cuántos QR se entregaron ("🔥 N ya tienen su QR
 - El ranking público muestra solo "Nombre I." y el total. A igual puntaje va primero quien llegó antes a ese total, así el top 10 nunca queda empatado.
 - **Mi cuenta → Mis puntos**: total, puesto, cuánto falta para el top 10 y últimos movimientos. La puerta muestra "+10 puntos" al validar.
 - **Panel → Puntos**: ranking completo por temporada y liga; en cada persona, sus movimientos y un formulario para cargar un **premio** (bonus) o un **ajuste** (+/-, con nota). Los movimientos no se borran: se corrigen con otro en sentido contrario.
+
+## Venta de entradas (Mercado Pago)
+
+**Cómo funciona**
+1. **Panel → Eventos → Ventas:** cada sector (los del evento) se vende online si tiene precio. Se carga el precio, el cupo online (vacío = sin límite) y, opcional, cuándo empieza y termina la venta (si no, hasta 4 h después de que empieza la fecha).
+2. **En la página de la fecha** aparece "Entradas": el cliente (con cuenta) elige sectores y cantidades (hasta 6), se le **reservan 15 minutos** y paga en Mercado Pago (Checkout Pro: tarjeta o dinero en cuenta; sin efectivo, porque se acredita tarde).
+3. Al aprobarse el pago, los QR aparecen en **Mi cuenta** (y en `/compra/<id>`, la pantalla a la que vuelve desde Mercado Pago). Cada entrada se puede **pasar a otra persona** por email (se le crea la cuenta si no tiene; el código del QR cambia).
+4. **Panel → Ventas** muestra lo recaudado, vendidas por sector y las compras. Desde ahí se puede **devolver** una compra (Mercado Pago devuelve la plata y los QR sin usar se anulan) o volver a consultar un pago.
+
+**Seguridad:** las credenciales viven solo en los secretos de Supabase (Edge Function `pagos`). El precio y el total se calculan en la base, nunca en el navegador. Ante cada aviso de Mercado Pago se consulta el pago en su API con nuestro token (fuente de verdad) y se aplica con `apply_mp_payment`, que es idempotente y verifica monto y moneda: un aviso falso no puede emitir entradas. La firma de los avisos se controla y, si no coincide, queda en los logs (suele ser la clave mal cargada) pero el pago se aplica igual, para que nadie se quede sin sus QR. Si un aviso no llega, el pago se aplica igual cuando el cliente vuelve a la web, cuando abre Mi cuenta o con "Revisar pago" en el panel.
+
+**Configuración (una vez)**
+1. En [Mercado Pago Developers → Tus integraciones](https://www.mercadopago.com.ar/developers/panel/app) creá una aplicación de **Checkout Pro** (pagos online). Al crearla te da las **credenciales de prueba** y una cuenta vendedora de prueba.
+2. En la aplicación, **Webhooks → Configurar notificaciones**: cargá la misma URL en **"URL modo pruebas"** y en **"URL modo productivo"**: `https://xupmwmmfdlumlvukoafa.supabase.co/functions/v1/pagos/webhook`, marcá el evento **Pagos**, guardá y copiá la **clave secreta**. (Los pagos de prueba solo avisan a esta URL del panel.)
+3. En Supabase → **Edge Functions → Secrets** cargá:
+   - `MP_ACCESS_TOKEN` = el Access Token (primero el de prueba).
+   - `MP_WEBHOOK_SECRET` = la clave secreta de los webhooks.
+   - `MP_TEST_MODE` = `true` mientras uses credenciales de prueba.
+4. Probá una compra: abrí la web en una ventana de incógnito, pagá con la cuenta **compradora de prueba** y una tarjeta de prueba (titular `APRO` para aprobado, `OTHE` para rechazado).
+5. Para vender de verdad: completá los datos de tu cuenta de Mercado Pago, reemplazá `MP_ACCESS_TOKEN` por el de **producción** y borrá `MP_TEST_MODE` (o ponelo en `false`). Revisá que la URL de webhooks esté cargada también en modo productivo.
 
 ## Configuración de Auth (una vez, en el dashboard de Supabase)
 

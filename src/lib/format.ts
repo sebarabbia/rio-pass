@@ -66,3 +66,24 @@ export function dateParts(iso: string) {
   const clean = (v: string | undefined) => (v ?? '').replace(/\./g, '')
   return { day: clean(parts.day), month: clean(parts.month), weekday: clean(parts.weekday) }
 }
+
+const moneyFormat = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2, minimumFractionDigits: 0 })
+
+/** 5000 -> "$ 5.000" (pesos argentinos). */
+export function formatMoney(amount: number | string) {
+  return moneyFormat.format(Number(amount))
+}
+
+/** "2027-01-15T23:30" (input datetime-local, hora argentina) -> ISO, o null si está vacío. */
+export function fromLocalDateTime(value: string) {
+  const [date, time] = value.split('T')
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? '') || !/^\d{2}:\d{2}$/.test(time ?? '')) return null
+  return fromLocalInputs(date, time)
+}
+
+/** ISO -> "2027-01-15T23:30" (hora argentina) para un input datetime-local. */
+export function toLocalDateTime(iso: string | null) {
+  if (!iso) return ''
+  const { date, time } = toLocalInputs(iso)
+  return `${date}T${time}`
+}

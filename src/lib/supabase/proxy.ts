@@ -4,7 +4,7 @@ import type { Database } from '@/lib/database.types'
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/lib/supabase/config'
 
 // Rutas que requieren estar logueado. El permiso por rol se verifica en cada página.
-const PROTECTED_PREFIXES = ['/cuenta', '/organizador', '/rrpp', '/puerta']
+const PROTECTED_PREFIXES = ['/cuenta', '/organizador', '/rrpp', '/puerta', '/compra']
 
 /** Refresca la sesión de Supabase en cada request y protege las rutas privadas. */
 export async function updateSession(request: NextRequest) {
